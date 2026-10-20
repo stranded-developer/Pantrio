@@ -32,6 +32,8 @@
 4. Types: `pnpm --filter @pantrio/web types:db`.
 
 ## Vercel (one project, all restaurants — P17)
+- Live: **https://pantrio-zeta.vercel.app** (project `pantrio`, team
+  strandeddevelopers-projects; GitHub `stranded-developer/Pantrio`, `main` deploys).
 - Import the GitHub repo. **Root Directory: `apps/web`** (leave "include files
   outside root" on — it needs `packages/*`). Framework: Next.js. Node 24.
 - Functions run in `sin1` (`apps/web/vercel.json`), next to the database.

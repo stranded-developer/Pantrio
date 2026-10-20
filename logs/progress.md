@@ -4,6 +4,22 @@ Newest first. What shipped, and **how it was verified** (separate claims).
 
 ---
 
+## 2026-10-20 (c) — Live on Vercel
+
+- Deployed: https://pantrio-zeta.vercel.app, functions in `sin1`, root
+  `apps/web`, Node 24, env vars set (Production + Preview).
+- **Verified on production** with a browser, test data deleted afterwards:
+  platform admin login → backoffice; secret key works (restaurant + owner
+  login created from the backoffice); owner login on `/o/<slug>/login`;
+  owner creates a cashier login; menu + sale (10.000 + PB1 10% = 11.000);
+  cashier login with limited nav.
+- Fixed: the platform login swapped a Suspense fallback form for the real
+  one, wiping typed credentials; `?next=` is now read in the browser.
+- **Open:** Supabase public sign-up is still ON (`/auth/v1/settings` reports
+  `disable_signup: false`); admin temp password not yet changed.
+
+---
+
 ## 2026-10-20 (b) — Multi-tenant cashier POS (FOKAS port), backoffice, printers
 
 ### Decided with the user
