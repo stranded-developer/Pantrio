@@ -53,12 +53,17 @@ export const findMembership = cache(async (slug: string): Promise<Membership | n
   return (await getMemberships()).find((m) => m.org.slug === slug) ?? null;
 });
 
-/** For pages under /o/[org]: not signed in → that restaurant's login; not a member → 404. */
+/**
+ * For pages under /o/[org]. Not signed in, or signed in with an account that
+ * isn't staff here (another restaurant's, or the platform admin's) → that
+ * restaurant's login page, which says which account is signed in. The login
+ * page 404s for a restaurant that doesn't exist, so nothing leaks.
+ */
 export async function requireMembershipPage(slug: string, base: string): Promise<Membership> {
   const user = await getCurrentUser();
   if (!user) redirect(`${base}/login`);
   const membership = await findMembership(slug);
-  if (!membership) notFound();
+  if (!membership) redirect(`${base}/login`);
   return membership;
 }
 

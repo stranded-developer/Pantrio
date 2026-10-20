@@ -9,11 +9,14 @@ export function LoginForm({
   subtitle,
   logoUrl,
   fallback,
+  notice,
 }: {
   title: string;
   subtitle: string;
   logoUrl?: string | null;
   fallback: string;
+  /** e.g. "You're signed in as … which isn't staff here." */
+  notice?: string;
 }) {
   const [state, action, pending] = useActionState<AuthState, FormData>(signIn, {});
 
@@ -44,6 +47,8 @@ export function LoginForm({
           <h1 className="text-xl font-semibold text-neutral-50">Staff Login</h1>
           <p className="mt-1 text-sm text-neutral-400">{subtitle}</p>
         </div>
+
+        {notice && <p className="rounded-lg bg-amber-500/15 p-3 text-sm text-amber-200">{notice}</p>}
 
         <div className="space-y-1">
           <label htmlFor="email" className="text-sm text-neutral-300">

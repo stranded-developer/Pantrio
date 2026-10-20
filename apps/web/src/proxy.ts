@@ -101,7 +101,9 @@ export async function proxy(request: NextRequest) {
   if (tenantSlug) {
     // Restaurant's own domain: everything but /login needs a session.
     if (!user && pathname !== "/login" && !pathname.startsWith("/auth/")) return redirectTo("/login", pathname);
-    if (user && pathname === "/login") return redirectTo("/pos");
+    // A signed-in user on /login is handled by the page: straight to the
+    // till if they are staff here, otherwise the form with a note — they may
+    // be signed in with another restaurant's (or the admin's) account.
     return response;
   }
 
@@ -109,7 +111,6 @@ export async function proxy(request: NextRequest) {
   if (tenantPath) {
     const isLogin = tenantPath[2] === "/login";
     if (!user && !isLogin) return redirectTo(`/o/${tenantPath[1]}/login`, pathname);
-    if (user && isLogin) return redirectTo(`/o/${tenantPath[1]}/pos`);
     return response;
   }
 
