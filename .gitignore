@@ -1,0 +1,12 @@
+node_modules
+.turbo
+.next
+dist
+coverage
+.vercel
+.env*
+!.env.example
+*.tsbuildinfo
+.DS_Store
+supabase/.temp
+supabase/.branches

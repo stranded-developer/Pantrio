@@ -1,0 +1,13 @@
+{
+  "name": "@pantrio/print-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Prints Pantrio receipts on the restaurant LAN using a per-device token",
+  "type": "module",
+  "main": "index.mjs",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node index.mjs",
+    "test": "node --test"
+  }
+}

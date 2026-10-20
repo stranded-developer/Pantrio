@@ -1,0 +1,24 @@
+[Unit]
+Description=Pantrio receipt print bridge
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=pantrio-bridge
+# The `lp` group owns /dev/usb/lp* — needed for a USB printer.
+SupplementaryGroups=lp
+WorkingDirectory=/opt/pantrio-bridge
+EnvironmentFile=/etc/pantrio-bridge.env
+ExecStart=/usr/bin/node index.mjs
+Restart=always
+RestartSec=5
+
+# Nothing here needs to write to disk.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

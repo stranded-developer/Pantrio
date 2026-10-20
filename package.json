@@ -1,0 +1,22 @@
+{
+  "name": "pantrio",
+  "private": true,
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "supabase": "^2.121.0",
+    "turbo": "^2.11.9",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
+  }
+}
