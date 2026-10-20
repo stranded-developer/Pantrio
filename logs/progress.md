@@ -15,8 +15,7 @@ Newest first. What shipped, and **how it was verified** (separate claims).
   cashier login with limited nav.
 - Fixed: the platform login swapped a Suspense fallback form for the real
   one, wiping typed credentials; `?next=` is now read in the browser.
-- **Open:** Supabase public sign-up is still ON (`/auth/v1/settings` reports
-  `disable_signup: false`); admin temp password not yet changed.
+- Sign-up disabled (verified `disable_signup: true`); admin password changed (old one rejected).
 
 ---
 
