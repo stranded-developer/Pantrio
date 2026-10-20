@@ -8,13 +8,11 @@ export function LoginForm({
   title,
   subtitle,
   logoUrl,
-  next,
   fallback,
 }: {
   title: string;
   subtitle: string;
   logoUrl?: string | null;
-  next?: string;
   fallback: string;
 }) {
   const [state, action, pending] = useActionState<AuthState, FormData>(signIn, {});
@@ -24,10 +22,17 @@ export function LoginForm({
     if (state.redirectTo) window.location.assign(state.redirectTo);
   }, [state.redirectTo]);
 
+  // ?next= is read in the browser at submit time. Reading it on the server
+  // meant a Suspense fallback form that was swapped for the real one —
+  // wiping whatever the cashier had already typed.
+  const submit = (formData: FormData) => {
+    formData.set("next", new URLSearchParams(window.location.search).get("next") ?? "");
+    action(formData);
+  };
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-neutral-950 p-6">
-      <form action={action} className="w-full max-w-sm space-y-5 rounded-2xl bg-neutral-900 p-8 shadow-xl">
-        <input type="hidden" name="next" value={next ?? ""} />
+      <form action={submit} className="w-full max-w-sm space-y-5 rounded-2xl bg-neutral-900 p-8 shadow-xl">
         <input type="hidden" name="fallback" value={fallback} />
         <div>
           {logoUrl ? (
