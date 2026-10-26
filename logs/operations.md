@@ -72,7 +72,16 @@ as workflow artifacts.
 - Later: Supabase Pro adds daily backups + point-in-time restore on top.
 
 ## Print bridge
-See `bridge/README.md`. Each box gets a token from Settings → Printers.
+See `bridge/README.md`. Each box gets a token from Settings → Printers. The
+receipt logo comes from Settings → Logo automatically (`LOGO=auto`).
+
+Never put the Supabase secret key or DB password on a venue box (P18, P23);
+backups run centrally (see Backups).
+
+### Venue boxes
+| Restaurant | Host | IP | MAC | Printer | Notes |
+|---|---|---|---|---|---|
+| FOKAS (old FOKAS DB) | `aml-s9xx-box` | 192.168.100.28 | 62:42:d7:0e:df:2b | `/dev/usb/lp0` (Panda PRJ-R58D, 58mm) | Still runs `focas-bridge` + `focas-backup` for the FOKAS repo; switch to `pantrio-bridge` when FOKAS goes live on Pantrio. |
 
 ### New STB — who does what (`/setup-stb`)
 Split decided 2026-10-26: Wilson does only what needs hands or a password;

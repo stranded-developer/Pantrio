@@ -175,18 +175,10 @@ export function TaxForm({ values }: { values: TaxValues }) {
   );
 }
 
-export function BusinessForm({
-  timezone,
-  cutover,
-  logoUrl,
-}: {
-  timezone: string;
-  cutover: number;
-  logoUrl: string | null;
-}) {
+export function BusinessForm({ timezone, cutover }: { timezone: string; cutover: number }) {
   return (
     <SettingsCard
-      title="Business day & branding"
+      title="Business day"
       intro="The business day decides which day a late order belongs to in Orders and Sales."
       action={updateBusinessSettings}
       submitLabel="Save"
@@ -211,9 +203,6 @@ export function BusinessForm({
           </select>
         </Field>
       </div>
-      <Field label="Logo URL (optional)" hint="Shown in the header and login page. https:// image link.">
-        <input name="logo_url" type="url" defaultValue={logoUrl ?? ""} placeholder="https://…" className={input} />
-      </Field>
     </SettingsCard>
   );
 }
@@ -222,7 +211,7 @@ export function ReceiptForm({ header, footer }: { header: string; footer: string
   return (
     <SettingsCard
       title="Receipt text"
-      intro="Start with the shop name, then address and phone. A 58mm receipt is 32 characters wide, so keep lines short. If the printer has a logo file, it replaces the first line."
+      intro="Start with the shop name, then address and phone. A 58mm receipt is 32 characters wide, so keep lines short. When a receipt logo is set (Logo, above), it prints in place of the first line."
       action={updateReceiptText}
       submitLabel="Save receipt text"
     >

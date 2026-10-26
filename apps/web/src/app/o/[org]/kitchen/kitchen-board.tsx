@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { playChime, unlockChime } from "@/lib/chime";
+import { LogoOnDark } from "@/components/tenant-logo";
 import type { KitchenItem, KitchenOrder } from "@/lib/queries/kitchen";
 import { setKitchenDone } from "./actions";
 
@@ -23,6 +24,7 @@ export function KitchenBoard({
   staffName,
   title,
   logoUrl,
+  logoOnDarkUrl,
   slug,
   base,
   outletId,
@@ -33,6 +35,7 @@ export function KitchenBoard({
   staffName: string;
   title: string;
   logoUrl: string | null;
+  logoOnDarkUrl: string | null;
   slug: string;
   base: string;
   outletId: string;
@@ -116,9 +119,8 @@ export function KitchenBoard({
         <div className="flex items-center gap-6">
           <div>
             <p className="flex items-center gap-2 text-lg font-semibold">
-              {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element -- tenant logo, any host
-                <img src={logoUrl} alt={title} className="h-6 w-auto" />
+              {logoUrl || logoOnDarkUrl ? (
+                <LogoOnDark name={title} logoUrl={logoUrl} logoOnDarkUrl={logoOnDarkUrl} className="h-6" />
               ) : (
                 <span>{title} ·</span>
               )}

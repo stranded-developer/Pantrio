@@ -35,8 +35,38 @@ const token = env("PRINT_DEVICE_TOKEN");
 const printer = createPrinter(env("PRINTER", "dry-run"));
 const width = Number(env("RECEIPT_WIDTH", "32"));
 const pollMs = Math.max(1000, Number(env("POLL_MS", "3000")));
-const logo = loadLogo(env("LOGO", "none"));
+// LOGO: unset/"auto" = the restaurant's receipt logo from Settings → Logo;
+// "none" = no logo; a path = a local 1-bit PBM file (overrides Settings).
+const logoSetting = env("LOGO", "auto");
+const fileLogo = logoSetting === "auto" || logoSetting === "none" ? null : loadLogo(logoSetting);
 const BATCH = 5;
+
+let remoteLogo = { url: null, logo: null };
+
+/**
+ * The receipt logo set in Settings. Downloaded once and re-fetched only when
+ * its URL changes (each upload gets a new URL). Any failure prints a text
+ * header — a logo must never stop a receipt.
+ */
+async function logoFor(settings) {
+  if (logoSetting === "none") return null;
+  if (fileLogo) return fileLogo;
+  const url = settings?.receipt_logo_url ?? null;
+  if (url === remoteLogo.url) return remoteLogo.logo;
+  let logo = null;
+  if (url) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      logo = parsePbm(Buffer.from(await res.arrayBuffer()));
+      log(`Receipt logo loaded (${logo.width}x${logo.height})`);
+    } catch (error) {
+      log(`Receipt logo unavailable (${error.message}) — printing text header`);
+    }
+  }
+  remoteLogo = { url, logo };
+  return logo;
+}
 
 /** A missing or broken logo prints text-only receipts — never no receipts. */
 function loadLogo(path) {
@@ -113,6 +143,7 @@ async function printJob(job) {
     if (!job.order_id) throw new Error("Job has no order");
     const data = await rpc("device_receipt_data", { p_order: job.order_id });
     const reprint = job.kind === "reprint";
+    const logo = await logoFor(data.settings);
 
     if (printer.dryRun) {
       log(`[dry-run] ${job.kind} for order ${data.order.order_no}\n${renderText(data, { width, reprint, logo })}`);

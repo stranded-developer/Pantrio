@@ -27,7 +27,8 @@ PANTRIO_PUBLISHABLE_KEY=sb_publishable_...
 PRINT_DEVICE_TOKEN=pdt_...
 PRINTER=usb:/dev/usb/lp0          # or tcp://192.168.1.50  or  dry-run
 RECEIPT_WIDTH=32                  # 58mm paper = 32, 80mm = 48
-# LOGO=/opt/pantrio-bridge/logo.pbm   optional, 1-bit PBM
+# LOGO=auto (default): the receipt logo set in Settings → Logo
+# LOGO=none: no logo · LOGO=/path/logo.pbm: a local file instead
 # POLL_MS=3000
 ```
 

@@ -27,6 +27,9 @@ export type OrgSettings = {
   receiptHeader: string;
   receiptFooter: string;
   logoUrl: string | null;
+  /** For dark screens (login, kitchen); falls back to logoUrl on a white badge. */
+  logoOnDarkUrl: string | null;
+  receiptLogoUrl: string | null;
 };
 
 export const getOrgSettings = cache(async (orgId: string): Promise<OrgSettings> => {
@@ -39,6 +42,8 @@ export const getOrgSettings = cache(async (orgId: string): Promise<OrgSettings> 
     receiptHeader: data.receipt_header,
     receiptFooter: data.receipt_footer,
     logoUrl: data.logo_url,
+    logoOnDarkUrl: data.logo_on_dark_url,
+    receiptLogoUrl: data.receipt_logo_url,
   };
 });
 

@@ -2,18 +2,21 @@
 
 import { useActionState, useEffect } from "react";
 import { signIn, type AuthState } from "@/app/login/actions";
+import { LogoOnDark } from "./tenant-logo";
 
 // FOKAS staff login, generalised: dark card, large touch targets (iPad).
 export function LoginForm({
   title,
   subtitle,
   logoUrl,
+  logoOnDarkUrl,
   fallback,
   notice,
 }: {
   title: string;
   subtitle: string;
   logoUrl?: string | null;
+  logoOnDarkUrl?: string | null;
   fallback: string;
   /** e.g. "You're signed in as … which isn't staff here." */
   notice?: string;
@@ -38,12 +41,9 @@ export function LoginForm({
       <form action={submit} className="w-full max-w-sm space-y-5 rounded-2xl bg-neutral-900 p-8 shadow-xl">
         <input type="hidden" name="fallback" value={fallback} />
         <div>
-          {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- tenant-uploaded, any host
-            <img src={logoUrl} alt={title} className="mb-4 h-10 w-auto" />
-          ) : (
-            <p className="mb-4 text-2xl font-bold tracking-tight text-neutral-50">{title}</p>
-          )}
+          <div className="mb-4">
+            <LogoOnDark name={title} logoUrl={logoUrl ?? null} logoOnDarkUrl={logoOnDarkUrl ?? null} />
+          </div>
           <h1 className="text-xl font-semibold text-neutral-50">Staff Login</h1>
           <p className="mt-1 text-sm text-neutral-400">{subtitle}</p>
         </div>

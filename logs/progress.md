@@ -4,6 +4,38 @@ Newest first. What shipped, and **how it was verified** (separate claims).
 
 ---
 
+## 2026-10-26 (c) — Profit screen, logos everywhere, receipt logo
+
+### Delivered
+- **Profit** (`/o/<slug>/profit`, managers): month stepper; net sales (excl.
+  PB1; service per settings), ingredient cost (HPP), gross profit, wages,
+  rent/bills, profit before tax, income tax (PPh with the yearly tax-free
+  band using year-to-date sales), profit after tax, break-even. Coverage
+  warning when sales lack costed recipes. Staff wages by name with raises
+  from a month; "Left" ends pay after a month. Fixed costs with a usual
+  monthly or yearly amount (versioned by month; 0 = stopped) and a
+  one-month "actual" override. Past months never restate (P11).
+- **Logos** (Settings → Logo, migration 7): main logo (till header), logo
+  for dark screens (login, kitchen; else main logo on a white badge), and a
+  receipt logo made in the browser as 1-bit PBM (darkness slider, preview,
+  ≤ 320 dots, blank rows trimmed). Files in the public `logos` bucket under
+  `<org_id>/`, writable only by that restaurant's managers.
+- **Bridge**: `LOGO=auto` (default) downloads the receipt logo from
+  `device_receipt_data`, cached until its URL changes; failure prints a text
+  header. Receipt layout unchanged from FOKAS.
+- FOKAS restaurant got its real logos (dark/light PNG + the FOKAS bridge's
+  `logo.pbm`).
+
+### Verification
+- Browser, production build, live DB, throwaway tenant (deleted with its
+  files): two wages + yearly rent + PLN with an actual → wages 5.500.000,
+  other 7.350.000, profit before tax −12.825.000, after tax −12.825.125,
+  break-even 12.850.000 (hand-worked); previous month 0; coverage warning;
+  logos uploaded via the UI, receipt logo 320×104, header and login show
+  the right variant.
+- Bridge dry-run on the live DB: "Receipt logo loaded (320x104)", logo
+  printed in place of the header line.
+
 ## 2026-10-26 (b) — Ingredients & Recipes (costing UI)
 
 ### Delivered

@@ -323,14 +323,14 @@ isOneToOne: false
                   ]
                 },"org_settings": {
                   Row: {
-                    "day_cutover_hour": number,"logo_url": string | null,"org_id": string,"receipt_footer": string,"receipt_header": string,"timezone": string,"updated_at": string,"updated_by": string | null
+                    "day_cutover_hour": number,"logo_on_dark_url": string | null,"logo_url": string | null,"org_id": string,"receipt_footer": string,"receipt_header": string,"receipt_logo_url": string | null,"timezone": string,"updated_at": string,"updated_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "day_cutover_hour"?: number,"logo_url"?: string | null,"org_id": string,"receipt_footer"?: string,"receipt_header"?: string,"timezone"?: string,"updated_at"?: string,"updated_by"?: string | null
+                    "day_cutover_hour"?: number,"logo_on_dark_url"?: string | null,"logo_url"?: string | null,"org_id": string,"receipt_footer"?: string,"receipt_header"?: string,"receipt_logo_url"?: string | null,"timezone"?: string,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Update: {
-                    "day_cutover_hour"?: number,"logo_url"?: string | null,"org_id"?: string,"receipt_footer"?: string,"receipt_header"?: string,"timezone"?: string,"updated_at"?: string,"updated_by"?: string | null
+                    "day_cutover_hour"?: number,"logo_on_dark_url"?: string | null,"logo_url"?: string | null,"org_id"?: string,"receipt_footer"?: string,"receipt_header"?: string,"receipt_logo_url"?: string | null,"timezone"?: string,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -804,7 +804,7 @@ isOneToOne: false
                            },
 "tenant_public_info":
 { Args: { "p_slug": string }; Returns: {
-              "logo_url": string,"name": string,"slug": string
+              "logo_on_dark_url": string,"logo_url": string,"name": string,"slug": string
             }[]
                            },
 "void_order":

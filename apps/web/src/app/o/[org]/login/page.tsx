@@ -27,6 +27,7 @@ async function TenantLogin({ params }: PageProps<"/o/[org]/login">) {
       title={tenant.name}
       subtitle="Cafe POS"
       logoUrl={tenant.logo_url}
+      logoOnDarkUrl={tenant.logo_on_dark_url}
       fallback={`${base}/pos`}
     />
   );

@@ -25,6 +25,7 @@ async function Kitchen({ slug }: { slug: string }) {
       staffName={name ?? user.email ?? ""}
       title={outlets.filter((o) => o.active).length > 1 ? `${org.name} · ${outlet.name}` : org.name}
       logoUrl={settings.logoUrl}
+      logoOnDarkUrl={settings.logoOnDarkUrl}
       slug={slug}
       base={base}
       outletId={outlet.id}

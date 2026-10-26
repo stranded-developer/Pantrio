@@ -43,7 +43,6 @@ export async function updateTaxSettings(slug: string, formData: FormData): Promi
 const business = z.object({
   timezone: z.enum(["Asia/Jakarta", "Asia/Makassar", "Asia/Jayapura", "Asia/Singapore", "Asia/Kuala_Lumpur"]),
   day_cutover_hour: z.coerce.number().int().min(0).max(23),
-  logo_url: z.union([z.literal(""), z.url("Logo must be a full https:// address.").startsWith("https://")]),
 });
 
 export async function updateBusinessSettings(slug: string, formData: FormData): Promise<Result> {
@@ -53,7 +52,7 @@ export async function updateBusinessSettings(slug: string, formData: FormData): 
   const supabase = await createClient();
   const { error } = await supabase
     .from("org_settings")
-    .update({ ...parsed.data, logo_url: parsed.data.logo_url || null })
+    .update(parsed.data)
     .eq("org_id", org.id);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/o/${slug}`, "layout");
@@ -91,6 +90,27 @@ export async function updateReceiptText(slug: string, formData: FormData): Promi
     .from("org_settings")
     .update({ receipt_header: header, receipt_footer: footer })
     .eq("org_id", org.id);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/o/${slug}`, "layout");
+  return { ok: true };
+}
+
+export type LogoKind = "logo_url" | "logo_on_dark_url" | "receipt_logo_url";
+
+/**
+ * Point a logo slot at a file the browser just uploaded to Storage (or clear
+ * it). Only files in this restaurant's own folder of the `logos` bucket are
+ * accepted — the Storage policy already limits who can write there.
+ */
+export async function saveLogo(slug: string, kind: LogoKind, url: string | null): Promise<Result> {
+  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  if (!["logo_url", "logo_on_dark_url", "receipt_logo_url"].includes(kind)) return { ok: false, error: "Invalid." };
+  const prefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/${org.id}/`;
+  if (url !== null && (!url.startsWith(prefix) || url.includes(".."))) return { ok: false, error: "Invalid logo file." };
+  const supabase = await createClient();
+  const patch =
+    kind === "logo_url" ? { logo_url: url } : kind === "logo_on_dark_url" ? { logo_on_dark_url: url } : { receipt_logo_url: url };
+  const { error } = await supabase.from("org_settings").update(patch).eq("org_id", org.id);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/o/${slug}`, "layout");
   return { ok: true };
