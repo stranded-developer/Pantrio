@@ -48,12 +48,28 @@
 - Your own platform domain later: add it to the project and to `PLATFORM_HOSTS`.
 
 ## First run
-1. Sign in at `https://<prod>/login` as the platform admin
-   (wilsonhusen78@gmail.com — temporary password given in chat; change it at
-   `/account` immediately).
+1. Sign in at `https://<prod>/login` with the platform-admin account.
 2. `/admin` → New restaurant → name, address, owner login.
 3. Owner signs in at `/o/<slug>/login` → Menu → Settings (tax, receipt) →
    Settings → Staff → Settings → Printers.
+
+## Backups (P23)
+Nightly at 05:30 WIB by GitHub Actions (`.github/workflows/db-backup.yml`):
+`pg_dump -Fc` of `public`, `auth`, `supabase_migrations` (FOKAS's method),
+verified with `pg_restore --list`, **encrypted (AES-256, gpg)**, kept 30 days
+as workflow artifacts.
+
+- Secrets in GitHub → Settings → Secrets and variables → Actions:
+  `SUPABASE_DB_URL` (session pooler URL with password) and
+  `BACKUP_PASSPHRASE` (16+ chars, in the password manager — a backup cannot
+  be opened without it). **Reset the DB password → update `SUPABASE_DB_URL`**,
+  or backups stop (the run fails and GitHub emails you).
+- Run one now: Actions → Database backup → Run workflow.
+- Restore: download the artifact, `scripts/restore-backup.sh <file>.dump.gpg
+  [new-db-url]` — into a fresh project, never over live data.
+- Not on restaurant STBs: one box would then hold the password to every
+  restaurant's data.
+- Later: Supabase Pro adds daily backups + point-in-time restore on top.
 
 ## Print bridge
 See `bridge/README.md`. Each box gets a token from Settings → Printers.

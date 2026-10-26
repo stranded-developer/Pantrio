@@ -141,3 +141,13 @@ as anyone. Pantrio's `create_order` etc. are SECURITY DEFINER functions that
 take identity from `auth.uid()` and check membership themselves; the server
 calls them with the user's session. The secret key is only for creating
 logins and the backoffice (P14 extended).
+
+### P23 — Backups: FOKAS's pg_dump method, run centrally and encrypted (2026-10-26)
+User asked to keep FOKAS's nightly backup method. Kept: `pg_dump -Fc` of
+public/auth/supabase_migrations, `pg_restore --list` check, 30 kept, 05:30
+WIB. Changed: it runs in GitHub Actions, not on a restaurant's STB — the
+Pantrio database holds every restaurant, so its password on one venue box
+would expose all of them (same reasoning as P18). The repo is public, so each
+dump is gpg-encrypted (AES-256) with a passphrase only the user holds before
+upload. **Rejected:** STB-local full dumps (above); unencrypted artifacts
+(downloadable by anyone with a GitHub account while the repo is public).

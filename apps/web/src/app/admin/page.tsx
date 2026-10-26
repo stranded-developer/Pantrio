@@ -2,6 +2,8 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { requirePlatformAdminPage } from "@/lib/auth";
 import { createServiceClient, hasServiceKey } from "@/lib/supabase/service";
+import { platformOrigin } from "@/lib/tenant";
+import { CopyLink } from "./copy-link";
 
 export default async function AdminHome() {
   // Live data across all restaurants: never prerender at build time.
@@ -18,6 +20,7 @@ export default async function AdminHome() {
     );
   }
   const admin = createServiceClient();
+  const origin = await platformOrigin();
   const [{ data: orgs }, { data: domains }, { data: members }] = await Promise.all([
     admin.from("organizations").select("id, name, slug, created_at").order("created_at", { ascending: false }),
     admin.from("org_domains").select("org_id, hostname"),
@@ -37,19 +40,25 @@ export default async function AdminHome() {
       ) : (
         <ul className="divide-y divide-neutral-100 overflow-hidden rounded-2xl bg-white shadow-sm">
           {orgs.map((o) => (
-            <li key={o.id}>
-              <Link href={`/admin/restaurants/${o.id}`} className="flex items-center justify-between gap-4 p-4 hover:bg-neutral-50">
-                <div>
-                  <p className="font-medium text-neutral-900">{o.name}</p>
-                  <p className="text-sm text-neutral-500">
-                    /o/{o.slug}
-                    {domains?.filter((d) => d.org_id === o.id).map((d) => ` · ${d.hostname}`)}
-                  </p>
-                </div>
+            <li key={o.id} className="space-y-1 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <Link href={`/admin/restaurants/${o.id}`} className="font-medium text-neutral-900 hover:underline">
+                  {o.name} →
+                </Link>
                 <span className="text-sm text-neutral-500">
                   {members?.filter((m) => m.org_id === o.id).length ?? 0} staff
                 </span>
-              </Link>
+              </div>
+              <div className="text-sm">
+                <CopyLink label="Login" href={`${origin}/o/${o.slug}/login`} />
+              </div>
+              {domains
+                ?.filter((d) => d.org_id === o.id)
+                .map((d) => (
+                  <div key={d.hostname} className="text-sm">
+                    <CopyLink label="Own domain" href={`https://${d.hostname}/login`} />
+                  </div>
+                ))}
             </li>
           ))}
         </ul>

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePlatformAdminPage } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase/service";
+import { platformOrigin } from "@/lib/tenant";
+import { CopyLink } from "../../copy-link";
 import { dnsInstructions, domainStatus, vercelConfigured } from "@/lib/vercel-domains";
 import { Domains, type DomainRow } from "./domains";
 
@@ -10,6 +12,7 @@ export default async function RestaurantPage({ params }: PageProps<"/admin/resta
   await requirePlatformAdminPage(); // not only in the layout — see admin/page.tsx
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const admin = createServiceClient();
+  const origin = await platformOrigin();
   const { data: org } = await admin.from("organizations").select("id, name, slug, created_at").eq("id", id).maybeSingle();
   if (!org) notFound();
 
@@ -45,10 +48,27 @@ export default async function RestaurantPage({ params }: PageProps<"/admin/resta
             /o/{org.slug} · {orders ?? 0} orders · since {new Date(org.created_at).toLocaleDateString("en-GB")}
           </p>
         </div>
-        <Link href={`/o/${org.slug}/login`} className="rounded-lg border border-neutral-300 px-4 py-2 text-sm text-neutral-700">
-          Open login page
-        </Link>
       </div>
+
+      <section className="space-y-2 rounded-2xl bg-white p-6 shadow-sm">
+        <h2 className="font-semibold text-neutral-900">Links for the restaurant</h2>
+        <p className="text-sm text-neutral-500">
+          Send the owner the login link. Staff use the same one; the kitchen tablet opens the kitchen link.
+        </p>
+        <div className="space-y-1 text-sm">
+          <div>
+            <CopyLink label="Login" href={`${origin}/o/${org.slug}/login`} />
+          </div>
+          <div>
+            <CopyLink label="Kitchen" href={`${origin}/o/${org.slug}/kitchen`} />
+          </div>
+          {(domains ?? []).map((d) => (
+            <div key={d.id}>
+              <CopyLink label="Own domain" href={`https://${d.hostname}/login`} />
+            </div>
+          ))}
+        </div>
+      </section>
 
       <Domains orgId={org.id} rows={rows} vercel={vercelConfigured()} />
 

@@ -4,6 +4,20 @@ Newest first. What shipped, and **how it was verified** (separate claims).
 
 ---
 
+## 2026-10-26 — FOKAS restaurant, backoffice links, backups
+
+- FOKAS created in Pantrio (`/o/fokas`, owner login made via the auth admin
+  API + `admin_create_organization`, verified by signing in). Starts empty —
+  FOKAS was never in production, so nothing was migrated.
+- Backoffice lists each restaurant's login link (copy button); the
+  restaurant page shows login / kitchen / own-domain links.
+- Nightly encrypted backup workflow (P23). Verified locally against the live
+  DB: dump 286 KB, 664 objects, 58 tables with data; gpg round trip
+  identical, wrong passphrase refused. **Not yet run on GitHub** — needs the
+  two secrets.
+- Repo found to be **public**; personal email removed from docs (it remains
+  in earlier commits until the repo is made private).
+
 ## 2026-10-20 (c) — Live on Vercel
 
 - Deployed: https://pantrio-zeta.vercel.app, functions in `sin1`, root

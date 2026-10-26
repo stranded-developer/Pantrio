@@ -1,0 +1,68 @@
+# Nightly database backup — FOKAS's method (logs/operations.md §9 there):
+# pg_dump -Fc of public + auth + supabase_migrations, checked with
+# pg_restore --list before it is kept, 30 days retained.
+#
+# Runs here instead of on a restaurant's STB: Pantrio's database holds every
+# restaurant, so its password must never sit on a box inside one of them
+# (logs/decisions.md P23). Every dump is encrypted with BACKUP_PASSPHRASE
+# before upload; the repo is public and artifacts are downloadable.
+#
+# Secrets (repo → Settings → Secrets and variables → Actions):
+#   SUPABASE_DB_URL     session-pooler URL incl. password
+#   BACKUP_PASSPHRASE   16+ chars; keep it in your password manager —
+#                       without it a backup cannot be opened
+# Restore: scripts/restore-backup.sh
+
+name: Database backup
+
+on:
+  schedule:
+    - cron: "30 22 * * *" # 05:30 WIB, after the 05:00 business-day cutover
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Dump and verify
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_DB_URL}" ]; then echo "::error::Secret SUPABASE_DB_URL is not set"; exit 1; fi
+          stamp="$(TZ=Asia/Jakarta date +%Y-%m-%d_%H%M)"
+          echo "STAMP=${stamp}" >> "$GITHUB_ENV"
+          mkdir -p out
+          # Same major version as the server (Postgres 17).
+          docker run --rm -e PGURL="${SUPABASE_DB_URL}" -v "$PWD/out:/out" postgres:17 sh -ec '
+            pg_dump "$PGURL" -Fc -n public -n auth -n supabase_migrations -f /out/pantrio.dump
+            pg_restore --list /out/pantrio.dump > /out/list.txt'
+          tables=$(grep -c "TABLE DATA" out/list.txt || true)
+          if [ "${tables}" -lt 20 ]; then echo "::error::Dump looks incomplete (${tables} tables)"; exit 1; fi
+          echo "Dump OK: $(du -h out/pantrio.dump | cut -f1), ${tables} tables with data"
+
+      - name: Encrypt
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ "${#BACKUP_PASSPHRASE}" -lt 16 ]; then echo "::error::Secret BACKUP_PASSPHRASE must be 16+ characters"; exit 1; fi
+          printf '%s' "${BACKUP_PASSPHRASE}" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+            --symmetric --cipher-algo AES256 -o "pantrio-${STAMP}.dump.gpg" out/pantrio.dump
+          shred -u out/pantrio.dump
+
+      - name: Keep for 30 days
+        uses: actions/upload-artifact@v4
+        with:
+          name: pantrio-db-${{ env.STAMP }}
+          path: pantrio-*.dump.gpg
+          retention-days: 30
+          if-no-files-found: error
