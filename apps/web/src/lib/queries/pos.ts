@@ -9,9 +9,10 @@ export type MenuItem = {
   price: number;
   active: boolean;
   unit_cost: number | null;
+  recipe_id: string | null;
 };
 
-const ITEM_COLUMNS = "id, category_id, name, price, active, unit_cost";
+const ITEM_COLUMNS = "id, category_id, name, price, active, unit_cost, recipe_id";
 
 /** Active menu for the POS grid. */
 export async function getPosMenu(orgId: string) {

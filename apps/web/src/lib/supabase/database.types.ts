@@ -793,6 +793,9 @@ isOneToOne: false
 "sales_summary":
 { Args: { "p_from": string,"p_org": string,"p_outlet"?: string,"p_to": string }; Returns: Json
                            },
+"save_recipe":
+{ Args: { "p_lines": Json,"p_name": string,"p_recipe": string,"p_yield_qty": number,"p_yield_unit": Database["public"]['Enums']["unit_code"] }; Returns: undefined
+                           },
 "set_kitchen_done":
 { Args: { "p_done": boolean,"p_order": string }; Returns: undefined
                            },

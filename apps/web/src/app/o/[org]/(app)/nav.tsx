@@ -12,6 +12,8 @@ const ITEMS: NavItem[] = [
   { path: "/kitchen", label: "Kitchen" },
   { path: "/sales", label: "Sales", managerOnly: true },
   { path: "/menu", label: "Menu", managerOnly: true },
+  { path: "/recipes", label: "Recipes", managerOnly: true },
+  { path: "/ingredients", label: "Ingredients", managerOnly: true },
   { path: "/settings", label: "Settings", managerOnly: true },
 ];
 

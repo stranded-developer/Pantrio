@@ -73,3 +73,26 @@ as workflow artifacts.
 
 ## Print bridge
 See `bridge/README.md`. Each box gets a token from Settings → Printers.
+
+### New STB — who does what (`/setup-stb`)
+Split decided 2026-10-26: Wilson does only what needs hands or a password;
+Claude does the rest over SSH from the Mac (same network as the box).
+
+1. **Wilson — plug in:** Armbian flashed (plain image), power (5V 2A), LAN
+   cable to the router/modem, printer by USB, paper loaded.
+2. **Claude — find the box:** scan the LAN from the Mac, report its IP.
+3. **Wilson — first login** (interactive, Claude can't type into it):
+   `ssh root@<ip>` → set the root password (password manager) → exit →
+   `ssh-copy-id root@<ip>`. Never give Claude the password.
+4. **Claude — set up:** timezone, Node 24 (NodeSource), rsync, check
+   `/dev/usb/lp0` (`modprobe usblp` if missing), install bridge + systemd
+   unit per `bridge/README.md`.
+5. **Token** — Settings → Printers → Add printer (shown once). Either Claude
+   fetches it in Chrome (token then sits in the chat transcript; revocable,
+   branch-scoped) or Wilson pastes it into `/etc/pantrio-bridge.env` directly.
+   Replacing a box → Revoke the old one on the same page.
+6. **Claude — start + check:** restart service, read `journalctl -u
+   pantrio-bridge`, confirm it's polling and the printer is reachable.
+7. **Wilson — test print:** one small POS payment, check the paper.
+8. **Claude — finish:** report MAC for a DHCP reservation (Wilson sets it on
+   the modem), record hostname/IP/MAC/printer here.

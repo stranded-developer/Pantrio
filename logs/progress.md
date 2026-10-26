@@ -4,6 +4,43 @@ Newest first. What shipped, and **how it was verified** (separate claims).
 
 ---
 
+## 2026-10-26 (b) — Ingredients & Recipes (costing UI)
+
+### Delivered
+- **Ingredients** (`/o/<slug>/ingredients`, managers): ingredient → brands /
+  packs (size, unit incl. ons/lusin, usable %, supplier) → prices as
+  append-only history with an effective date (upcoming prices shown),
+  price per kg / L / pcs, per-ingredient conversions (1 pcs = 55 g),
+  suppliers, hide/show.
+- **Recipes** (`/o/<slug>/recipes`): every menu item with cost per portion,
+  food cost % (green / amber > 35% / red > 40%), margin before and after
+  income tax; "Create recipe" links a recipe to the menu item. Prep
+  (sub-)recipes with batch yield and cost per unit.
+- **Recipe editor**: lines from brands or prep recipes, amount, unit,
+  waste %; live cost per line, per batch, per portion and margin, computed
+  in the browser with the same `@pantrio/core` engine; missing prices /
+  conversions listed by name; save is one transaction (`save_recipe`,
+  migration 6, RLS-bound).
+- Any change to prices, products, conversions or recipes re-costs the menu
+  (`recomputeMenuCosts`) → `menu_items.unit_cost` → snapshotted by
+  `create_order` on each sale → Sales / Menu margins.
+- Fix: a recipe with **no ingredients** now counts as unknown cost, not Rp 0
+  / 100% margin (core + test).
+
+### Verification
+- core 33 tests (+empty recipe); SQL checks 30 (+save_recipe atomic on a
+  cycle error, cashier refused).
+- Browser, production build, live DB, throwaway tenant (deleted after):
+  beans Rp 250.000/kg 18 g + milk Rp 20.000/L 150 ml (5% waste) + syrup
+  prep (500 g gula aren Rp 30.000/kg → Rp 15.000/L) 20 ml = **Rp 7.950**,
+  31,8% food cost, 68,2% margin, 67,7% after PPh — matched hand-worked
+  figures in the editor, recipes list and menu; a sale recorded cost
+  Rp 7.950 and Sales showed 68,2% / 100% coverage; raising beans to
+  Rp 300.000 re-costed the menu to Rp 8.850 (35,4%) while the earlier sale
+  kept Rp 7.950; an empty recipe showed "unknown".
+- Test note: with Cache Components, Next keeps the previous page mounted
+  but hidden (React Activity) — e2e selectors must use `:visible`.
+
 ## 2026-10-26 — FOKAS restaurant, backoffice links, backups
 
 - FOKAS created in Pantrio (`/o/fokas`, owner login made via the auth admin

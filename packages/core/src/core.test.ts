@@ -181,6 +181,13 @@ describe("dishCost", () => {
     expect(out.missing[0]?.reason).toBe("no_conversion");
   });
 
+  it("treats a recipe with no ingredients as unknown, never free", () => {
+    const empty: Recipe = { id: "e", name: "Latte", yieldQty: 1, yieldUnit: "pcs", lines: [] };
+    const r = dishCost("e", catalog([], [empty]));
+    expect(r.cost).toBeNull();
+    expect(r.missing[0]?.reason).toBe("no_lines");
+  });
+
   it("rejects a recipe that contains itself", () => {
     const a: Recipe = { id: "a", yieldQty: 1, yieldUnit: "kg", lines: [{ recipeId: "b", qty: 1, unit: "kg" }] };
     const b: Recipe = { id: "b", yieldQty: 1, yieldUnit: "kg", lines: [{ recipeId: "a", qty: 1, unit: "kg" }] };

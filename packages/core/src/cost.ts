@@ -46,7 +46,7 @@ export type Catalog = {
 };
 
 export type MissingCost = {
-  reason: "no_price" | "unknown_product" | "unknown_recipe" | "no_conversion" | "zero_yield";
+  reason: "no_price" | "unknown_product" | "unknown_recipe" | "no_conversion" | "zero_yield" | "no_lines";
   /** Recipe ids from the top-level dish down to where the gap is. */
   path: string[];
   id: string;
@@ -164,6 +164,11 @@ export function costRecipe(
 
   const knownBatchCost = lines.reduce((sum, l) => (l.cost ? sum.add(l.cost) : sum), Q.ZERO);
   const yieldQty = Q.from(recipe.yieldQty);
+  // A recipe with no ingredients has an unknown cost, not a free one (P7):
+  // otherwise linking an empty recipe would show a 100% margin at the till.
+  if (recipe.lines.length === 0) {
+    missing.push({ reason: "no_lines", path, id: recipe.id, message: `${recipe.name ?? "Recipe"} has no ingredients yet` });
+  }
   let complete = missing.length === 0;
   if (yieldQty.cmp(Q.ZERO) <= 0) {
     missing.push({ reason: "zero_yield", path, id: recipe.id, message: `Recipe ${recipe.name ?? recipe.id} yields nothing` });

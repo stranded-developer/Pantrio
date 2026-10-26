@@ -174,3 +174,24 @@ delete from auth.users where id = :B;
 select 'ok sole owner account protected' where exists (select 1 from auth.users where id = :B);
 delete from organizations where id = :'org_b';
 select 'ok restaurant deleted' where not exists (select 1 from organizations where id = :'org_b');
+
+-- save_recipe: atomic, RLS-bound
+select set_config('request.jwt.claim.sub', :A, false);
+set role authenticated;
+insert into ingredients (org_id, name) values (:'org_a', 'Susu') returning id as ing_milk \gset
+insert into ingredient_products (org_id, ingredient_id, name, pack_qty, pack_unit) values (:'org_a', :'ing_milk', 'UHT 1L', 1, 'l') returning id as milk \gset
+insert into recipes (org_id, kind, name) values (:'org_a', 'prep', 'Base') returning id as base \gset
+insert into recipes (org_id, kind, name) values (:'org_a', 'menu_item', 'Latte r') returning id as latte_r \gset
+select save_recipe(:'base', 'Base', 1, 'l', jsonb_build_array(jsonb_build_object('product_id', :'milk', 'qty', 1, 'unit', 'l')));
+select save_recipe(:'latte_r', 'Latte r', 1, 'pcs', jsonb_build_array(
+  jsonb_build_object('product_id', :'milk', 'qty', 150, 'unit', 'ml', 'waste_bps', 500),
+  jsonb_build_object('sub_recipe_id', :'base', 'qty', 50, 'unit', 'ml')));
+select 'ok save_recipe lines' where (select count(*) from recipe_lines where recipe_id = :'latte_r') = 2;
+-- a cycle is refused and the old lines survive
+select save_recipe(:'base', 'Base', 1, 'l', jsonb_build_array(jsonb_build_object('sub_recipe_id', :'latte_r', 'qty', 1, 'unit', 'pcs')));
+select 'ok failed save keeps old lines' where (select count(*) from recipe_lines where recipe_id = :'base' and product_id = :'milk') = 1;
+-- cashier cannot
+select set_config('request.jwt.claim.sub', :C, false);
+select save_recipe(:'latte_r', 'Hacked', 1, 'pcs', '[]');
+reset role;
+select 'ok cashier save refused' where (select name from recipes where id = :'latte_r') = 'Latte r';
