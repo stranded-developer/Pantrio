@@ -32,6 +32,9 @@ importers:
       '@pantrio/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@pantrio/print-bridge':
+        specifier: workspace:*
+        version: link:../../bridge
       '@supabase/ssr':
         specifier: ^0.12.7
         version: 0.12.7(@supabase/supabase-js@2.118.0)
@@ -93,6 +96,8 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
+
+  bridge: {}
 
   packages/core:
     dependencies:

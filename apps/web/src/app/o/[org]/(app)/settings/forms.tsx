@@ -4,11 +4,11 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type ReactNode } from "react";
 import { calculateOrderTotals, formatRupiah } from "@pantrio/core";
 import { useTenant } from "../tenant-context";
-import { updateBusinessSettings, updateReceiptText, updateTaxSettings, type Result } from "./actions";
+import { updateBusinessSettings, updateTaxSettings, type Result } from "./actions";
 
-const input = "w-full rounded-lg border border-neutral-300 px-3 py-3 outline-none focus:border-neutral-900";
+export const input = "w-full rounded-lg border border-neutral-300 px-3 py-3 outline-none focus:border-neutral-900";
 
-function SettingsCard({
+export function SettingsCard({
   title,
   intro,
   action,
@@ -61,7 +61,7 @@ function SettingsCard({
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <label className="block space-y-1">
       <span className="text-sm font-medium text-neutral-700">{label}</span>
@@ -203,24 +203,6 @@ export function BusinessForm({ timezone, cutover }: { timezone: string; cutover:
           </select>
         </Field>
       </div>
-    </SettingsCard>
-  );
-}
-
-export function ReceiptForm({ header, footer }: { header: string; footer: string }) {
-  return (
-    <SettingsCard
-      title="Receipt text"
-      intro="Start with the shop name, then address and phone. A 58mm receipt is 32 characters wide, so keep lines short. When a receipt logo is set (Logo, above), it prints in place of the first line."
-      action={updateReceiptText}
-      submitLabel="Save receipt text"
-    >
-      <Field label="Header">
-        <textarea name="receipt_header" defaultValue={header} rows={4} placeholder={"NAMA TOKO\nJl. ...\n0812-...."} className={`${input} font-mono text-sm`} />
-      </Field>
-      <Field label="Footer">
-        <textarea name="receipt_footer" defaultValue={footer} rows={3} placeholder={"Terima kasih!\nIG @..."} className={`${input} font-mono text-sm`} />
-      </Field>
     </SettingsCard>
   );
 }

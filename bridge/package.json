@@ -5,9 +5,24 @@
   "description": "Prints Pantrio receipts on the restaurant LAN using a per-device token",
   "type": "module",
   "main": "index.mjs",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node index.mjs",
     "test": "node --test"
-  }
+  },
+  "exports": {
+    ".": "./index.mjs",
+    "./receipt": {
+      "types": "./receipt.d.mts",
+      "default": "./receipt.mjs"
+    }
+  },
+  "files": [
+    "*.mjs",
+    "*.d.mts",
+    "*.service",
+    "README.md"
+  ]
 }

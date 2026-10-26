@@ -20,6 +20,15 @@ export function buildReceipt(data, { width = 32, reprint = false, logo = null } 
   return p.size(1).bold(false).align("left").feed(4).cut().bytes();
 }
 
+/**
+ * The layout as blocks — { align, bold, size, lines } — for previews that
+ * want to draw sizes faithfully (Settings → Receipt). Same layout as
+ * buildReceipt; size 2/3 = double/triple width and height on paper.
+ */
+export function receiptBlocks(data, { width = 32, reprint = false, logo = null } = {}) {
+  return layout(data, { width, reprint, logo });
+}
+
 /** The same receipt as plain text, for logs and the dry-run printer. */
 export function renderText(data, options) {
   const blocks = layout(data, { width: 32, reprint: false, ...options });

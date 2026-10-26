@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - bridge
 allowBuilds:
   sharp: false
   unrs-resolver: false
