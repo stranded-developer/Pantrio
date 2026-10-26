@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatBps, formatDay, formatRupiah, isDate, isPeriod, periodRange, Q, type Period } from "@pantrio/core";
-import { requireManagerPage } from "@/lib/auth";
+import { requirePermPage } from "@/lib/auth";
 import { getSalesSummary, type SalesSummary } from "@/lib/queries/sales";
 import { businessDateToday, getCurrentOutlet, getOutlets, tenantBase } from "@/lib/tenant";
 import { DateNav } from "../date-nav";
@@ -15,7 +15,7 @@ const PERIODS: { value: Period; label: string }[] = [
 export default async function SalesPage({ params: routeParams, searchParams }: PageProps<"/o/[org]/sales">) {
   const [{ org: slug }, params] = await Promise.all([routeParams, searchParams]);
   const base = await tenantBase(slug);
-  const { org } = await requireManagerPage(slug, base);
+  const { org } = await requirePermPage(slug, base, "sales.view");
 
   const [today, outlet, outlets] = await Promise.all([
     businessDateToday(org.id),

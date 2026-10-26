@@ -3,22 +3,42 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useTenant } from "../../tenant-context";
-import { addStaff, resetPassword, updateMember, type Result } from "./actions";
+import Link from "next/link";
+import { addStaff, renameMember, resetPassword, updateMember, type Result } from "./actions";
 
 export type StaffRow = {
   userId: string;
   name: string;
   email: string | null;
-  role: "owner" | "manager" | "cashier";
+  /** "owner" or a role id */
+  roleRef: string;
   active: boolean;
   isMe: boolean;
 };
 
 const input = "w-full rounded-lg border border-neutral-300 px-3 py-3 outline-none focus:border-neutral-900";
 
-export function StaffManager({ rows, canCreate }: { rows: StaffRow[]; canCreate: boolean }) {
+export function StaffManager({
+  rows,
+  roles,
+  canCreate,
+}: {
+  rows: StaffRow[];
+  roles: { id: string; name: string }[];
+  canCreate: boolean;
+}) {
   const router = useRouter();
-  const { slug } = useTenant();
+  const { slug, base } = useTenant();
+  const roleOptions = (
+    <>
+      <option value="owner">Owner — everything</option>
+      {roles.map((r) => (
+        <option key={r.id} value={r.id}>
+          {r.name}
+        </option>
+      ))}
+    </>
+  );
   const [adding, setAdding] = useState(false);
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
@@ -41,8 +61,11 @@ export function StaffManager({ rows, canCreate }: { rows: StaffRow[]; canCreate:
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900">Staff</h1>
           <p className="text-sm text-neutral-500">
-            Owners manage everything; managers run menu, sales and settings; cashiers sell. Deactivate rather than
-            delete — names stay on past orders.
+            Owners can do everything. What everyone else can open is set by their role —{" "}
+            <Link href={`${base}/settings/roles`} className="underline">
+              edit roles
+            </Link>
+            . Deactivate rather than delete; names stay on past orders.
           </p>
         </div>
         {canCreate && (
@@ -68,10 +91,8 @@ export function StaffManager({ rows, canCreate }: { rows: StaffRow[]; canCreate:
             <input name="name" placeholder="Name (shown on receipts)" required className={input} />
             <input name="email" type="email" placeholder="Email (their username)" required className={input} />
             <input name="password" type="text" minLength={8} placeholder="Starting password (8+ characters)" required className={input} />
-            <select name="role" defaultValue="cashier" className={input}>
-              <option value="cashier">Cashier</option>
-              <option value="manager">Manager</option>
-              <option value="owner">Owner</option>
+            <select name="role" defaultValue={roles.find((r) => r.name === "Cashier")?.id ?? roles[0]?.id ?? "owner"} className={input}>
+              {roleOptions}
             </select>
           </div>
           <p className="text-xs text-neutral-500">Give them the email and password; they can change it under their account.</p>
@@ -97,15 +118,23 @@ export function StaffManager({ rows, canCreate }: { rows: StaffRow[]; canCreate:
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <select
-                value={row.role}
+                value={row.roleRef}
                 disabled={pending}
-                onChange={(e) => run(updateMember(slug, row.userId, { role: e.target.value as StaffRow["role"] }))}
+                onChange={(e) => run(updateMember(slug, row.userId, { role: e.target.value }))}
                 className="rounded-lg border border-neutral-300 px-3 py-2 text-sm"
               >
-                <option value="cashier">Cashier</option>
-                <option value="manager">Manager</option>
-                <option value="owner">Owner</option>
+                {roleOptions}
               </select>
+              <button
+                disabled={pending}
+                onClick={() => {
+                  const name = window.prompt("Name (shown on receipts)", row.name);
+                  if (name && name.trim() !== row.name) run(renameMember(slug, row.userId, name.trim()));
+                }}
+                className="rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-700 disabled:opacity-40"
+              >
+                Rename
+              </button>
               {!row.isMe && canCreate && (
                 <button
                   disabled={pending}

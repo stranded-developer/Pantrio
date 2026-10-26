@@ -24,7 +24,7 @@ async function refresh(slug: string, orgId: string) {
 
 /** Create the recipe for a menu item (1 portion) and link it. Returns its id. */
 export async function createMenuRecipe(slug: string, menuItemId: string): Promise<IdResult> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "recipes.manage");
   const supabase = await createClient();
   const { data: item } = await supabase
     .from("menu_items")
@@ -41,11 +41,8 @@ export async function createMenuRecipe(slug: string, menuItemId: string): Promis
     .select("id")
     .single();
   if (error || !recipe) return fail(error?.message ?? "Could not create the recipe.");
-  const { error: linkError } = await supabase
-    .from("menu_items")
-    .update({ recipe_id: recipe.id })
-    .eq("id", item.id)
-    .eq("org_id", org.id);
+  // Via link_menu_recipe (migration 8): needs recipes.manage, not menu.manage.
+  const { error: linkError } = await supabase.rpc("link_menu_recipe", { p_menu_item: item.id, p_recipe: recipe.id });
   if (linkError) return fail(linkError.message);
   revalidatePath(`/o/${slug}`, "layout");
   return { ok: true, value: recipe.id };
@@ -59,7 +56,7 @@ const prep = z.object({
 
 /** A sub-recipe used inside dishes: dough, sauce, syrup, cold brew… */
 export async function createPrepRecipe(slug: string, formData: FormData): Promise<IdResult> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "recipes.manage");
   const p = prep.safeParse(Object.fromEntries(formData));
   if (!p.success) return fail(p.error.issues[0]!.message);
   const supabase = await createClient();
@@ -93,7 +90,7 @@ const saveInput = z.object({
 });
 
 export async function saveRecipe(slug: string, recipeId: string, raw: z.input<typeof saveInput>): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "recipes.manage");
   const p = saveInput.safeParse(raw);
   if (!p.success) return fail(p.error.issues[0]!.message);
   const supabase = await createClient();
@@ -118,7 +115,7 @@ export async function saveRecipe(slug: string, recipeId: string, raw: z.input<ty
 
 /** Delete a recipe. A prep recipe still used by another recipe is refused. */
 export async function deleteRecipe(slug: string, recipeId: string): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "recipes.manage");
   const supabase = await createClient();
   const { error } = await supabase.from("recipes").delete().eq("id", recipeId).eq("org_id", org.id);
   if (error) {

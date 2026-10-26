@@ -62,7 +62,8 @@ export async function proxy(request: NextRequest) {
     const alreadyPrefixed = pathname === `/o/${tenantSlug}` || pathname.startsWith(`/o/${tenantSlug}/`);
     if (!alreadyPrefixed && !pathname.startsWith("/auth/") && !pathname.startsWith("/account")) {
       rewriteTo = request.nextUrl.clone();
-      rewriteTo.pathname = `/o/${tenantSlug}${pathname === "/" ? "/pos" : pathname}`;
+      // "/" is the restaurant's home, which sends each role to its first screen.
+      rewriteTo.pathname = `/o/${tenantSlug}${pathname === "/" ? "" : pathname}`;
     }
   }
 

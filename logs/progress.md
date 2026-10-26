@@ -4,6 +4,23 @@ Newest first. What shipped, and **how it was verified** (separate claims).
 
 ---
 
+## 2026-10-26 (d) — Roles & permissions, staff rename, receipt preview
+
+- Migration 8 (live): `org_roles`, `has_perm()`, every policy/function on
+  permissions; FOKAS and Kawa got Manager (11) + Cashier (3); owners intact.
+- Settings → Roles (owners): checkbox grid per role, new/rename/delete
+  (refused while in use). Staff: role picker lists roles; Rename.
+- Pages/actions use `requirePermPage` / `requireMembership(slug, perm)`;
+  sign-in lands on the first allowed screen; `/no-access` when a role opens
+  nothing.
+- Settings → Receipt: live preview drawn from `bridge/receipt.mjs`.
+- Verified: SQL checks 35 (custom role limits, no self-escalation, role in
+  use kept, rename rules); browser on prod build + live DB (throwaway
+  tenant, deleted): Kitchen role lands on /kitchen and is bounced from /pos
+  and /sales; Cashier + Ingredients sees exactly POS/Orders/Kitchen/
+  Ingredients and can add an ingredient but not open Menu; rename shows in
+  the header; empty role → no-access.
+
 ## 2026-10-26 (c) — Profit screen, logos everywhere, receipt logo
 
 ### Delivered

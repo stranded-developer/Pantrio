@@ -30,7 +30,7 @@ const tax = z.object({
 });
 
 export async function updateTaxSettings(slug: string, formData: FormData): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "settings.manage");
   const parsed = tax.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]!.message };
   const supabase = await createClient();
@@ -46,7 +46,7 @@ const business = z.object({
 });
 
 export async function updateBusinessSettings(slug: string, formData: FormData): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "settings.manage");
   const parsed = business.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]!.message };
   const supabase = await createClient();
@@ -73,7 +73,7 @@ function clean(value: FormDataEntryValue | null): string {
 
 /** Receipt header/footer. The bridge reads these at print time (FOKAS D36). */
 export async function updateReceiptText(slug: string, formData: FormData): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "settings.manage");
   const header = clean(formData.get("receipt_header"));
   const footer = clean(formData.get("receipt_footer"));
   if (!header) return { ok: false, error: "The header needs at least the shop name." };
@@ -103,7 +103,7 @@ export type LogoKind = "logo_url" | "logo_on_dark_url" | "receipt_logo_url";
  * accepted — the Storage policy already limits who can write there.
  */
 export async function saveLogo(slug: string, kind: LogoKind, url: string | null): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "settings.manage");
   if (!["logo_url", "logo_on_dark_url", "receipt_logo_url"].includes(kind)) return { ok: false, error: "Invalid." };
   const prefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/${org.id}/`;
   if (url !== null && (!url.startsWith(prefix) || url.includes(".."))) return { ok: false, error: "Invalid logo file." };

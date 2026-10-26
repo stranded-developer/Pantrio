@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { requireMembership } from "@/lib/auth";
+import { can, requireMembership } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export type SubmitOrderResult =
@@ -29,7 +29,7 @@ export async function submitCashOrder(raw: z.input<typeof input>): Promise<Submi
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid order." };
   const p = parsed.data;
-  const { org } = await requireMembership(p.slug);
+  const { org } = await requireMembership(p.slug, "pos.sell");
 
   const supabase = await createClient();
   const { data: order, error } = await supabase.rpc("create_order", {
@@ -55,7 +55,7 @@ export async function submitCashOrder(raw: z.input<typeof input>): Promise<Submi
 
 /** Manager/owner, same business day — enforced again inside void_order() (D11, D14). */
 export async function voidOrder(slug: string, orderId: string, reason: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  await requireMembership(slug, ["owner", "manager"]);
+  await requireMembership(slug, "orders.void");
   if (!z.uuid().safeParse(orderId).success) return { ok: false, error: "Invalid order." };
   if (!reason.trim()) return { ok: false, error: "A reason is required to void an order." };
   const supabase = await createClient();
@@ -65,7 +65,8 @@ export async function voidOrder(slug: string, orderId: string, reason: string): 
 
 /** Another copy, printed marked SALINAN / REPRINT. Any staff member. */
 export async function reprintReceipt(slug: string, orderId: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  await requireMembership(slug);
+  const m = await requireMembership(slug);
+  if (!can(m, "pos.sell") && !can(m, "orders.view")) return { ok: false, error: "Your role can't reprint receipts." };
   if (!z.uuid().safeParse(orderId).success) return { ok: false, error: "Invalid order." };
   const supabase = await createClient();
   const { error } = await supabase.rpc("queue_reprint", { p_order: orderId });

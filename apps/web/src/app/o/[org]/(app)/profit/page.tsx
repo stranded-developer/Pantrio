@@ -6,7 +6,7 @@ import {
   type FixedCostCategory,
   type StaffMember,
 } from "@pantrio/core";
-import { requireManagerPage } from "@/lib/auth";
+import { requirePermPage } from "@/lib/auth";
 import { toTaxSettings } from "@/lib/costing-model";
 import { getSalesSummary } from "@/lib/queries/sales";
 import { createClient } from "@/lib/supabase/server";
@@ -28,7 +28,7 @@ function shiftMonth(m: string, by: number): string {
 
 export default async function ProfitPage({ params, searchParams }: PageProps<"/o/[org]/profit">) {
   const [{ org: slug }, sp] = await Promise.all([params, searchParams]);
-  const { org } = await requireManagerPage(slug, await tenantBase(slug));
+  const { org } = await requirePermPage(slug, await tenantBase(slug), "profit.manage");
   const today = await businessDateToday(org.id);
   const thisMonth = ym(today);
   const month = typeof sp.month === "string" && MONTH.test(sp.month) && sp.month <= thisMonth ? sp.month : thisMonth;

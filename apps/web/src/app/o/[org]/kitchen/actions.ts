@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { requireMembership } from "@/lib/auth";
+import { can, requireMembership } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -10,7 +10,8 @@ import { createClient } from "@/lib/supabase/server";
  * member; set_kitchen_done() checks they belong to the order's restaurant.
  */
 export async function setKitchenDone(slug: string, orderId: string, done: boolean) {
-  await requireMembership(slug);
+  const m = await requireMembership(slug);
+  if (!can(m, "kitchen.view") && !can(m, "pos.sell")) return { ok: false as const, error: "Your role can't use the kitchen screen." };
   if (!z.uuid().safeParse(orderId).success) return { ok: false as const, error: "Invalid order." };
   const supabase = await createClient();
   const { error } = await supabase.rpc("set_kitchen_done", { p_order: orderId, p_done: done });

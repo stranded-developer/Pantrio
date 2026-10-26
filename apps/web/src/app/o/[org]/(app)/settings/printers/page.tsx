@@ -1,4 +1,4 @@
-import { requireManagerPage } from "@/lib/auth";
+import { requirePermPage } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseEnv } from "@/lib/supabase/env";
 import { getOutlets, tenantBase } from "@/lib/tenant";
@@ -6,7 +6,7 @@ import { PrinterManager, type DeviceRow } from "./printer-manager";
 
 export default async function PrintersPage({ params }: PageProps<"/o/[org]/settings/printers">) {
   const { org: slug } = await params;
-  const { org } = await requireManagerPage(slug, await tenantBase(slug));
+  const { org } = await requirePermPage(slug, await tenantBase(slug), "printers.manage");
   const supabase = await createClient();
   const [{ data }, outlets] = await Promise.all([
     supabase

@@ -151,3 +151,18 @@ would expose all of them (same reasoning as P18). The repo is public, so each
 dump is gpg-encrypted (AES-256) with a passphrase only the user holds before
 upload. **Rejected:** STB-local full dumps (above); unencrypted artifacts
 (downloadable by anyone with a GitHub account while the repo is public).
+
+### P24 — Custom roles with permission checkboxes; owners stay special (2026-10-26)
+User asked for per-role permissions and custom roles. `org_roles` holds a
+name + permission list per restaurant; non-owner members point at one.
+Defaults "Manager" (all) and "Cashier" (POS, Orders, Kitchen) reproduce the
+old enum roles, so the migration changed nobody's access. Owners always
+have everything and alone manage staff, roles and branches — **rejected:**
+a "manage roles" permission, since its holder could grant themselves
+anything. Enforced in SQL via `has_perm()` in every write policy and money
+function (`create_order` needs pos.sell, `void_order` orders.void, …); pages
+redirect to the member's first allowed screen; nav hides the rest. Wages
+are visible only to roles with Profit. Owners can rename staff who work
+only for their restaurant (`owner_rename_member`). Menu cost re-costing and
+recipe linking go through `set_menu_costs` / `link_menu_recipe` so Recipes /
+Ingredients editors don't need Menu permission.

@@ -9,7 +9,7 @@ import { getMemberships, isPlatformAdmin, requireUser } from "@/lib/auth";
 async function Chooser() {
   await requireUser();
   const [memberships, admin] = await Promise.all([getMemberships(), isPlatformAdmin()]);
-  if (memberships.length === 1 && !admin) redirect(`/o/${memberships[0]!.org.slug}/pos`);
+  if (memberships.length === 1 && !admin) redirect(`/o/${memberships[0]!.org.slug}`);
   if (memberships.length === 0 && admin) redirect("/admin");
 
   return (
@@ -23,9 +23,9 @@ async function Chooser() {
         <ul className="divide-y divide-neutral-100 overflow-hidden rounded-2xl bg-white shadow-sm">
           {memberships.map((m) => (
             <li key={m.org.id}>
-              <Link href={`/o/${m.org.slug}/pos`} className="flex justify-between p-4 hover:bg-neutral-50">
+              <Link href={`/o/${m.org.slug}`} className="flex justify-between p-4 hover:bg-neutral-50">
                 <span className="font-medium text-neutral-900">{m.org.name}</span>
-                <span className="text-sm capitalize text-neutral-500">{m.role}</span>
+                <span className="text-sm text-neutral-500">{m.roleName}</span>
               </Link>
             </li>
           ))}

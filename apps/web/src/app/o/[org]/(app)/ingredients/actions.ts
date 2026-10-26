@@ -32,7 +32,7 @@ const ingredient = z.object({
 });
 
 export async function saveIngredient(slug: string, formData: FormData): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "ingredients.manage");
   const p = ingredient.safeParse(Object.fromEntries(formData));
   if (!p.success) return fail(p.error.issues[0]!.message);
   const { id: rowId, ...values } = p.data;
@@ -58,7 +58,7 @@ const product = z.object({
 });
 
 export async function saveProduct(slug: string, formData: FormData): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "ingredients.manage");
   const p = product.safeParse(Object.fromEntries(formData));
   if (!p.success) return fail(p.error.issues[0]!.message);
   const { id: rowId, yield_pct, price, ...values } = p.data;
@@ -93,7 +93,7 @@ const price = z.object({
 });
 
 export async function recordPrice(slug: string, formData: FormData): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "ingredients.manage");
   const p = price.safeParse(Object.fromEntries(formData));
   if (!p.success) return fail(p.error.issues[0]!.message);
   const user = await getCurrentUser();
@@ -112,7 +112,7 @@ const conversion = z.object({
 });
 
 export async function addConversion(slug: string, formData: FormData): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "ingredients.manage");
   const p = conversion.safeParse(Object.fromEntries(formData));
   if (!p.success) return fail(p.error.issues[0]!.message);
   const supabase = await createClient();
@@ -122,7 +122,7 @@ export async function addConversion(slug: string, formData: FormData): Promise<R
 }
 
 export async function removeConversion(slug: string, conversionId: string): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "ingredients.manage");
   const supabase = await createClient();
   const { error } = await supabase.from("ingredient_conversions").delete().eq("id", conversionId).eq("org_id", org.id);
   if (error) return fail(error.message);
@@ -135,7 +135,7 @@ export async function setActive(
   rowId: string,
   active: boolean
 ): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "ingredients.manage");
   if (!["ingredients", "ingredient_products", "suppliers"].includes(table)) return fail("Invalid.");
   const supabase = await createClient();
   const { error } = await supabase.from(table).update({ active }).eq("id", rowId).eq("org_id", org.id);
@@ -151,7 +151,7 @@ const supplier = z.object({
 });
 
 export async function saveSupplier(slug: string, formData: FormData): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "ingredients.manage");
   const p = supplier.safeParse(Object.fromEntries(formData));
   if (!p.success) return fail(p.error.issues[0]!.message);
   const { id: rowId, ...values } = p.data;

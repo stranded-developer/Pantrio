@@ -10,11 +10,10 @@ export default async function StaffPage({ params }: PageProps<"/o/[org]/settings
   const me = await getCurrentUser();
   const supabase = await createClient();
 
-  const { data: members } = await supabase
-    .from("org_members")
-    .select("user_id, role, active, created_at")
-    .eq("org_id", org.id)
-    .order("created_at");
+  const [{ data: members }, { data: roles }] = await Promise.all([
+    supabase.from("org_members").select("user_id, role, role_id, active, created_at").eq("org_id", org.id).order("created_at"),
+    supabase.from("org_roles").select("id, name").eq("org_id", org.id).order("name"),
+  ]);
   const ids = (members ?? []).map((m) => m.user_id);
   const [{ data: profiles }, emails] = await Promise.all([
     supabase.from("profiles").select("id, full_name").in("id", ids),
@@ -29,7 +28,7 @@ export default async function StaffPage({ params }: PageProps<"/o/[org]/settings
     userId: m.user_id,
     name: names.get(m.user_id) ?? "—",
     email: emailOf.get(m.user_id) ?? null,
-    role: m.role,
+    roleRef: m.role === "owner" ? "owner" : (m.role_id ?? ""),
     active: m.active,
     isMe: m.user_id === me?.id,
   }));
@@ -41,7 +40,7 @@ export default async function StaffPage({ params }: PageProps<"/o/[org]/settings
           Creating logins needs the server key (SUPABASE_SECRET_KEY). Roles and deactivation still work.
         </p>
       )}
-      <StaffManager rows={rows} canCreate={hasServiceKey()} />
+      <StaffManager rows={rows} roles={roles ?? []} canCreate={hasServiceKey()} />
     </>
   );
 }

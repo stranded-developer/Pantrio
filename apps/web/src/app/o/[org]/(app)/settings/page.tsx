@@ -1,4 +1,4 @@
-import { getProfileName, requireManagerPage, requireUser } from "@/lib/auth";
+import { getProfileName, requirePermPage, requireUser } from "@/lib/auth";
 import { getOrgSettings, getTaxSettings, tenantBase } from "@/lib/tenant";
 import { BusinessForm, TaxForm } from "./forms";
 import { ReceiptForm } from "./receipt-form";
@@ -6,7 +6,7 @@ import { LogoForm } from "./logo-form";
 
 export default async function SettingsPage({ params }: PageProps<"/o/[org]/settings">) {
   const { org: slug } = await params;
-  const { org } = await requireManagerPage(slug, await tenantBase(slug));
+  const { org } = await requirePermPage(slug, await tenantBase(slug), "settings.manage");
   const user = await requireUser();
   const [tax, settings, name] = await Promise.all([getTaxSettings(org.id), getOrgSettings(org.id), getProfileName(user.id)]);
 

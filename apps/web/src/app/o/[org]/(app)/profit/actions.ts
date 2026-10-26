@@ -18,7 +18,7 @@ const rupiah = (label: string) => z.coerce.number().int(`${label}: whole rupiah 
 const fail = (m: string): Result => ({ ok: false, error: m.replace(/^.*?:\s*(?=[A-Z])/, "") });
 
 async function guard(slug: string) {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "profit.manage");
   return { org, supabase: await createClient() };
 }
 const done = (slug: string): Result => {

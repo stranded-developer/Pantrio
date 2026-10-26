@@ -13,17 +13,20 @@ import { createServiceClient, hasServiceKey } from "@/lib/supabase/service";
 
 export type Result = { ok: true; message?: string } | { ok: false; error: string };
 
-const role = z.enum(["owner", "manager", "cashier"]);
+/** "owner", or the id of one of this restaurant's roles. */
+const roleRef = z.union([z.literal("owner"), z.uuid("Pick a role.")]);
+const membershipFor = (ref: z.infer<typeof roleRef>) =>
+  ref === "owner" ? { role: "owner" as const, role_id: null } : { role: "cashier" as const, role_id: ref };
 
 const newStaff = z.object({
   name: z.string().trim().min(1, "Enter a name.").max(100),
   email: z.email("Enter a valid email."),
   password: z.string().min(8, "Password must be at least 8 characters."),
-  role,
+  role: roleRef,
 });
 
 export async function addStaff(slug: string, formData: FormData): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner"]);
+  const { org } = await requireMembership(slug, "owner");
   if (!hasServiceKey()) return { ok: false, error: "Account creation isn't configured (SUPABASE_SECRET_KEY missing)." };
   const parsed = newStaff.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]!.message };
@@ -51,7 +54,7 @@ export async function addStaff(slug: string, formData: FormData): Promise<Result
   const supabase = await createClient();
   const { error } = await supabase
     .from("org_members")
-    .upsert({ org_id: org.id, user_id: userId, role: parsed.data.role, active: true });
+    .upsert({ org_id: org.id, user_id: userId, ...membershipFor(parsed.data.role), active: true });
   if (error) return { ok: false, error: error.message };
 
   revalidatePath(`/o/${slug}/settings/staff`);
@@ -61,15 +64,15 @@ export async function addStaff(slug: string, formData: FormData): Promise<Result
 export async function updateMember(
   slug: string,
   userId: string,
-  changes: { role?: z.infer<typeof role>; active?: boolean }
+  changes: { role?: string; active?: boolean }
 ): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner"]);
-  const parsedRole = changes.role === undefined ? undefined : role.parse(changes.role);
+  const { org } = await requireMembership(slug, "owner");
+  const parsedRole = changes.role === undefined ? undefined : roleRef.parse(changes.role);
   const supabase = await createClient();
   const { error } = await supabase
     .from("org_members")
     .update({
-      ...(parsedRole ? { role: parsedRole } : {}),
+      ...(parsedRole ? membershipFor(parsedRole) : {}),
       ...(changes.active === undefined ? {} : { active: changes.active }),
     })
     .eq("org_id", org.id)
@@ -81,7 +84,7 @@ export async function updateMember(
 }
 
 export async function resetPassword(slug: string, userId: string, password: string): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner"]);
+  const { org } = await requireMembership(slug, "owner");
   if (!hasServiceKey()) return { ok: false, error: "Not configured (SUPABASE_SECRET_KEY missing)." };
   if (password.length < 8) return { ok: false, error: "Password must be at least 8 characters." };
   const me = await getCurrentUser();
@@ -96,4 +99,14 @@ export async function resetPassword(slug: string, userId: string, password: stri
   }
   const { error } = await admin.auth.admin.updateUserById(userId, { password });
   return error ? { ok: false, error: error.message } : { ok: true, message: "Password changed." };
+}
+
+/** Correct a staff member's name (shown on receipts). Owner only; SQL refuses people who also work elsewhere. */
+export async function renameMember(slug: string, userId: string, name: string): Promise<Result> {
+  const { org } = await requireMembership(slug, "owner");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("owner_rename_member", { p_org: org.id, p_user: userId, p_name: name });
+  if (error) return { ok: false, error: error.message.replace(/^.*?:\s*(?=[A-Z])/, "") };
+  revalidatePath(`/o/${slug}`, "layout");
+  return { ok: true };
 }

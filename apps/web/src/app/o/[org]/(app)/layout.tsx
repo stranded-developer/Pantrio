@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
-import { getProfileName, isManager, requireMembershipPage, requireUser } from "@/lib/auth";
+import { getProfileName, requireMembershipPage, requireUser } from "@/lib/auth";
 import { getCurrentOutlet, getOrgSettings, getOutlets, tenantBase } from "@/lib/tenant";
 import { Nav } from "./nav";
 import { OutletSwitcher } from "./outlet-switcher";
@@ -12,7 +12,8 @@ import { TenantProvider } from "./tenant-context";
 // inside <Suspense> (Cache Components).
 async function Shell({ slug, children }: { slug: string; children: ReactNode }) {
   const base = await tenantBase(slug);
-  const { org, role } = await requireMembershipPage(slug, base);
+  const m = await requireMembershipPage(slug, base);
+  const { org } = m;
   const user = await requireUser();
   const [settings, outlet, outlets, name] = await Promise.all([
     getOrgSettings(org.id),
@@ -32,7 +33,7 @@ async function Shell({ slug, children }: { slug: string; children: ReactNode }) 
     >
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 bg-white px-6 py-4">
         <div className="flex flex-wrap items-center gap-6">
-          <Link href={`${base}/pos`}>
+          <Link href={base || "/"}>
             {settings.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- tenant logo, any host
               <img src={settings.logoUrl} alt={org.name} className="h-7 w-auto" />
@@ -43,13 +44,13 @@ async function Shell({ slug, children }: { slug: string; children: ReactNode }) 
               Cafe POS{activeOutlets.length > 1 ? ` · ${outlet.name}` : ""}
             </p>
           </Link>
-          <Nav isManager={isManager(role)} />
+          <Nav permissions={m.permissions} isOwner={m.isOwner} />
         </div>
         <div className="flex items-center gap-4">
           {activeOutlets.length > 1 && <OutletSwitcher outlets={activeOutlets} />}
           <Link href="/account" className="text-right">
             <p className="text-sm font-medium text-neutral-900">{name ?? user.email}</p>
-            <p className="text-xs capitalize text-neutral-500">{role}</p>
+            <p className="text-xs text-neutral-500">{m.roleName}</p>
           </Link>
           <SignOutButton
             to={`${base}/login`}

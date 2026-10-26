@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 export type Result = { ok: true } | { ok: false; error: string };
 
 export async function saveOutlet(slug: string, id: string | null, name: string): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner"]);
+  const { org } = await requireMembership(slug, "owner");
   const parsed = z.string().trim().min(1, "Name the branch.").max(80).safeParse(name);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]!.message };
   const supabase = await createClient();
@@ -21,7 +21,7 @@ export async function saveOutlet(slug: string, id: string | null, name: string):
 }
 
 export async function setOutletActive(slug: string, id: string, active: boolean): Promise<Result> {
-  const { org } = await requireMembership(slug, ["owner"]);
+  const { org } = await requireMembership(slug, "owner");
   const supabase = await createClient();
   if (!active) {
     const { count } = await supabase

@@ -303,18 +303,44 @@ isOneToOne: false
                   ]
                 },"org_members": {
                   Row: {
-                    "active": boolean,"created_at": string,"org_id": string,"role": Database["public"]['Enums']["org_role"],"user_id": string
+                    "active": boolean,"created_at": string,"org_id": string,"role": Database["public"]['Enums']["org_role"],"role_id": string | null,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "active"?: boolean,"created_at"?: string,"org_id": string,"role"?: Database["public"]['Enums']["org_role"],"user_id": string
+                    "active"?: boolean,"created_at"?: string,"org_id": string,"role"?: Database["public"]['Enums']["org_role"],"role_id"?: string | null,"user_id": string
                   }
                   Update: {
-                    "active"?: boolean,"created_at"?: string,"org_id"?: string,"role"?: Database["public"]['Enums']["org_role"],"user_id"?: string
+                    "active"?: boolean,"created_at"?: string,"org_id"?: string,"role"?: Database["public"]['Enums']["org_role"],"role_id"?: string | null,"user_id"?: string
                   }
                   Relationships: [
                     {
       foreignKeyName: "org_members_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "org_members_role_fk"
+      columns: ["role_id","org_id"]
+isOneToOne: false
+      referencedRelation: "org_roles"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
+                },"org_roles": {
+                  Row: {
+                    "created_at": string,"id": string,"name": string,"org_id": string,"permissions": (string)[]
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"name": string,"org_id": string,"permissions"?: (string)[]
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"name"?: string,"org_id"?: string,"permissions"?: (string)[]
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "org_roles_org_id_fkey"
       columns: ["org_id"]
 isOneToOne: false
       referencedRelation: "organizations"
@@ -692,6 +718,9 @@ isOneToOne: false
 "business_date":
 { Args: { "cutover_hour": number,"ts": string,"tz": string }; Returns: string
                            },
+"create_default_roles":
+{ Args: { "p_org": string }; Returns: undefined
+                           },
 "create_order":
 { Args: { "p_amount_tendered": number,"p_client_request_id": string,"p_items": Json,"p_org": string,"p_outlet": string,"p_priority"?: boolean }; Returns: {
               "business_date": string,
@@ -760,8 +789,8 @@ isOneToOne: false
 "device_receipt_data":
 { Args: { "p_order": string,"p_token": string }; Returns: Json
                            },
-"is_org_manager":
-{ Args: { "p_org": string }; Returns: boolean
+"has_perm":
+{ Args: { "p_org": string,"p_perm": string }; Returns: boolean
                            },
 "is_org_member":
 { Args: { "p_org": string }; Returns: boolean
@@ -775,11 +804,23 @@ isOneToOne: false
 "is_valid_timezone":
 { Args: { "tz": string }; Returns: boolean
                            },
+"link_menu_recipe":
+{ Args: { "p_menu_item": string,"p_recipe": string }; Returns: undefined
+                           },
+"my_permissions":
+{ Args: { "p_org": string }; Returns: (string)[]
+                           },
 "org_business_date":
 { Args: { "p_org": string,"ts"?: string }; Returns: string
                            },
 "org_role_of":
 { Args: { "p_org": string }; Returns: Database["public"]['Enums']["org_role"]
+                           },
+"owner_rename_member":
+{ Args: { "p_name": string,"p_org": string,"p_user": string }; Returns: undefined
+                           },
+"permission_keys":
+{ Args: Record<PropertyKey, never>; Returns: (string)[]
                            },
 "queue_reprint":
 { Args: { "p_order": string }; Returns: undefined
@@ -798,6 +839,9 @@ isOneToOne: false
                            },
 "set_kitchen_done":
 { Args: { "p_done": boolean,"p_order": string }; Returns: undefined
+                           },
+"set_menu_costs":
+{ Args: { "p_costs": Json,"p_org": string }; Returns: undefined
                            },
 "shares_org_with":
 { Args: { "p_user": string }; Returns: boolean

@@ -31,7 +31,7 @@ async function done(slug: string): Promise<ActionResult> {
 }
 
 export async function upsertMenuItem(slug: string, formData: FormData): Promise<ActionResult> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "menu.manage");
   const parsed = item.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]!.message };
   const { id, ...values } = parsed.data;
@@ -43,14 +43,14 @@ export async function upsertMenuItem(slug: string, formData: FormData): Promise<
 }
 
 export async function setMenuItemActive(slug: string, id: string, active: boolean): Promise<ActionResult> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "menu.manage");
   const supabase = await createClient();
   const { error } = await supabase.from("menu_items").update({ active }).eq("id", id).eq("org_id", org.id);
   return error ? { ok: false, error: error.message } : done(slug);
 }
 
 export async function upsertMenuCategory(slug: string, formData: FormData): Promise<ActionResult> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "menu.manage");
   const parsed = category.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]!.message };
   const { id, ...values } = parsed.data;
@@ -62,7 +62,7 @@ export async function upsertMenuCategory(slug: string, formData: FormData): Prom
 }
 
 export async function setMenuCategoryActive(slug: string, id: string, active: boolean): Promise<ActionResult> {
-  const { org } = await requireMembership(slug, ["owner", "manager"]);
+  const { org } = await requireMembership(slug, "menu.manage");
   const supabase = await createClient();
   const { error } = await supabase.from("menu_categories").update({ active }).eq("id", id).eq("org_id", org.id);
   return error ? { ok: false, error: error.message } : done(slug);

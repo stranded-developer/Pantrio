@@ -1,4 +1,4 @@
-import { requireManagerPage } from "@/lib/auth";
+import { requirePermPage } from "@/lib/auth";
 import { loadCostingData } from "@/lib/costing";
 import { createClient } from "@/lib/supabase/server";
 import { businessDateToday, tenantBase } from "@/lib/tenant";
@@ -6,7 +6,7 @@ import { IngredientManager } from "./ingredient-manager";
 
 export default async function IngredientsPage({ params }: PageProps<"/o/[org]/ingredients">) {
   const { org: slug } = await params;
-  const { org } = await requireManagerPage(slug, await tenantBase(slug));
+  const { org } = await requirePermPage(slug, await tenantBase(slug), "ingredients.manage");
   const supabase = await createClient();
   const [data, history, suppliers, today] = await Promise.all([
     loadCostingData(org.id, supabase),

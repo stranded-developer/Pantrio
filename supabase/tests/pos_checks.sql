@@ -18,7 +18,9 @@ set role service_role;
 select id as org_a from admin_create_organization('Fokas Cafe', 'fokas', :A) \gset
 select id as org_b from admin_create_organization('Other', 'other', :B) \gset
 reset role;
-insert into org_members (org_id, user_id, role) values (:'org_a', :C, 'cashier');
+insert into org_members (org_id, user_id, role, role_id)
+  select :'org_a', :C, 'cashier', id from org_roles where org_id = :'org_a' and name = 'Cashier';
+select 'ok default roles per org' where (select count(*) from org_roles) = 4;
 select id as outlet_a from outlets where org_id = :'org_a' \gset
 select id as outlet_b from outlets where org_id = :'org_b' \gset
 select 'ok defaults created' where (select count(*) from org_settings) = 2 and (select count(*) from tax_settings) = 2;
@@ -195,3 +197,43 @@ select set_config('request.jwt.claim.sub', :C, false);
 select save_recipe(:'latte_r', 'Hacked', 1, 'pcs', '[]');
 reset role;
 select 'ok cashier save refused' where (select name from recipes where id = :'latte_r') = 'Latte r';
+
+-- ── roles & permissions (migration 8) ──
+reset role;
+select set_config('request.jwt.claim.sub', '', false);
+\set D '''dddddddd-0000-0000-0000-00000000000d'''
+insert into auth.users (id, email, raw_user_meta_data) values (:D, 'barista@a', '{"full_name":"Dewi"}');
+-- a non-owner member without a role is refused
+insert into org_members (org_id, user_id, role) values (:'org_a', :D, 'cashier');
+-- owner A creates a custom role: kitchen only; unknown permission refused
+set role authenticated; select set_config('request.jwt.claim.sub', :A, false);
+insert into org_roles (org_id, name, permissions) values (:'org_a', 'Kitchen', array['kitchen.view']) returning id as kitchen_role \gset
+insert into org_roles (org_id, name, permissions) values (:'org_a', 'Bad', array['admin.all']);
+insert into org_members (org_id, user_id, role, role_id) values (:'org_a', :D, 'cashier', :'kitchen_role');
+select owner_rename_member(:'org_a', :D, 'Dewi K.');
+select 'ok owner renames sole-org staff' where (select full_name from profiles where id = :D) = 'Dewi K.';
+select owner_rename_member(:'org_a', :D, '');
+-- kitchen-only member: can mark done; cannot sell, reprint, read wages, edit menu or roles, rename
+select set_config('request.jwt.claim.sub', :D, false);
+select 'kitchen perms: ' || array_to_string(my_permissions(:'org_a'), ',');
+select create_order(:'org_a', :'outlet_a', gen_random_uuid(), jsonb_build_array(jsonb_build_object('menu_item_id', :'latte', 'qty', 1)), 50000);
+select queue_reprint(id) from orders where org_id = :'org_a' limit 1;
+select set_kitchen_done(id, true) from orders where org_id = :'org_a' and queue_no is not null limit 1;
+select 'ok kitchen role marks done' where exists (select 1 from orders where org_id = :'org_a' and kitchen_done_by = :D);
+select 'kitchen sees wages (expect 0): ' || count(*) from staff_wages;
+with x as (update menu_items set price = 1 returning 1) select 'kitchen menu edits (expect 0): ' || count(*) from x;
+with x as (update org_roles set permissions = permission_keys() returning 1) select 'non-owner role edits (expect 0): ' || count(*) from x;
+select owner_rename_member(:'org_a', :D, 'Self');
+-- owner adds orders.void to Cashier → the cashier can now void
+select set_config('request.jwt.claim.sub', :A, false);
+update org_roles set permissions = permissions || array['orders.void'] where org_id = :'org_a' and name = 'Cashier';
+reset role;
+update org_members set active = true where user_id = :C;
+insert into orders (org_id, outlet_id, order_no, status, price_mode, service_bps, tax_bps, pb1_on_service, business_date, client_request_id, opened_by, grand_total)
+  values (:'org_a', :'outlet_a', 999, 'paid', 'exclusive', 0, 0, true, org_business_date(:'org_a'), gen_random_uuid(), :C, 1000) returning id as o999 \gset
+set role authenticated; select set_config('request.jwt.claim.sub', :C, false);
+select case when status = 'voided' then 'ok cashier with orders.void can void' else 'FAIL void' end from void_order(:'o999', 'role test');
+reset role;
+-- a role still in use cannot be deleted
+delete from org_roles where id = :'kitchen_role';
+select 'ok role in use kept' where exists (select 1 from org_roles where id = :'kitchen_role');

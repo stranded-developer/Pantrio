@@ -2,37 +2,47 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { Permission } from "@/lib/permissions";
 import { useTenant } from "./tenant-context";
 
-type NavItem = { path: string; label: string; managerOnly?: boolean };
-
-const ITEMS: NavItem[] = [
-  { path: "/pos", label: "POS" },
-  { path: "/orders", label: "Orders" },
-  { path: "/kitchen", label: "Kitchen" },
-  { path: "/sales", label: "Sales", managerOnly: true },
-  { path: "/profit", label: "Profit", managerOnly: true },
-  { path: "/menu", label: "Menu", managerOnly: true },
-  { path: "/recipes", label: "Recipes", managerOnly: true },
-  { path: "/ingredients", label: "Ingredients", managerOnly: true },
-  { path: "/settings", label: "Settings", managerOnly: true },
+// One tab per screen; shown only if the role may open it. Hiding a link is
+// convenience only — pages, actions and SQL check again (FOKAS D14, P24).
+const ITEMS: { path: string; label: string; perm: Permission | Permission[] | "owner" }[] = [
+  { path: "/pos", label: "POS", perm: "pos.sell" },
+  { path: "/orders", label: "Orders", perm: "orders.view" },
+  { path: "/kitchen", label: "Kitchen", perm: "kitchen.view" },
+  { path: "/sales", label: "Sales", perm: "sales.view" },
+  { path: "/profit", label: "Profit", perm: "profit.manage" },
+  { path: "/menu", label: "Menu", perm: "menu.manage" },
+  { path: "/recipes", label: "Recipes", perm: "recipes.manage" },
+  { path: "/ingredients", label: "Ingredients", perm: "ingredients.manage" },
 ];
 
-export function Nav({ isManager }: { isManager: boolean }) {
+export function settingsPath(perms: readonly Permission[], isOwner: boolean): string | null {
+  if (isOwner || perms.includes("settings.manage")) return "/settings";
+  if (perms.includes("printers.manage")) return "/settings/printers";
+  return null;
+}
+
+export function Nav({ permissions, isOwner }: { permissions: Permission[]; isOwner: boolean }) {
   const pathname = usePathname();
   const { base } = useTenant();
+  const allowed = (perm: Permission | Permission[] | "owner") =>
+    isOwner || (perm !== "owner" && (Array.isArray(perm) ? perm : [perm]).some((p) => permissions.includes(p)));
+  const settings = settingsPath(permissions, isOwner);
+  const items = [
+    ...ITEMS.filter((i) => allowed(i.perm)).map((i) => ({ href: `${base}${i.path}`, label: i.label, match: `${base}${i.path}` })),
+    ...(settings ? [{ href: `${base}${settings}`, label: "Settings", match: `${base}/settings` }] : []),
+  ];
 
-  // Hiding a link is convenience only — every page, action and SQL function
-  // re-checks the role (FOKAS D14).
   return (
     <nav className="flex flex-wrap gap-1">
-      {ITEMS.filter((item) => !item.managerOnly || isManager).map((item) => {
-        const href = `${base}${item.path}`;
-        const active = pathname.startsWith(href);
+      {items.map((item) => {
+        const active = pathname.startsWith(item.match);
         return (
           <Link
-            key={item.path}
-            href={href}
+            key={item.href}
+            href={item.href}
             className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
               active ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"
             }`}

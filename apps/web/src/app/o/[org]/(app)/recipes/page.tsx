@@ -1,5 +1,5 @@
 import { costRecipe, dishCost, dishMargin, Q, RecipeCycleError } from "@pantrio/core";
-import { requireManagerPage } from "@/lib/auth";
+import { requirePermPage } from "@/lib/auth";
 import { loadCostingData } from "@/lib/costing";
 import { buildCatalog, toTaxSettings, unitPrice } from "@/lib/costing-model";
 import { getFullMenu } from "@/lib/queries/pos";
@@ -9,7 +9,7 @@ import { RecipeList, type DishRow, type PrepRow } from "./recipe-list";
 export default async function RecipesPage({ params }: PageProps<"/o/[org]/recipes">) {
   const { org: slug } = await params;
   const base = await tenantBase(slug);
-  const { org } = await requireManagerPage(slug, base);
+  const { org } = await requirePermPage(slug, base, "recipes.manage");
   const [data, { items, categories }, taxRow] = await Promise.all([
     loadCostingData(org.id),
     getFullMenu(org.id),

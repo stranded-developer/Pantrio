@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatDay, formatRupiah, isDate, shiftDay } from "@pantrio/core";
-import { requireMembershipPage } from "@/lib/auth";
+import { requirePermPage } from "@/lib/auth";
 import { getNames, getOrdersForDate } from "@/lib/queries/pos";
 import { businessDateToday, getCurrentOutlet, getOrgSettings, tenantBase } from "@/lib/tenant";
 import { DateNav } from "../date-nav";
@@ -8,7 +8,7 @@ import { DateNav } from "../date-nav";
 export default async function OrdersPage({ params, searchParams }: PageProps<"/o/[org]/orders">) {
   const [{ org: slug }, sp] = await Promise.all([params, searchParams]);
   const base = await tenantBase(slug);
-  const { org } = await requireMembershipPage(slug, base);
+  const { org } = await requirePermPage(slug, base, "orders.view");
   const [today, outlet, settings] = await Promise.all([
     businessDateToday(org.id),
     getCurrentOutlet(org.id),

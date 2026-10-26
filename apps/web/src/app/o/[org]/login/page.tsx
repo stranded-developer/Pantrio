@@ -16,7 +16,7 @@ async function TenantLogin({ params }: PageProps<"/o/[org]/login">) {
   // Already staff here → the till. Signed in as someone else → the form, so
   // they can switch account (signing in replaces the session).
   const user = await getCurrentUser();
-  if (user && (await findMembership(org))) redirect(`${base}/pos`);
+  if (user && (await findMembership(org))) redirect(base || "/");
   const notice = user
     ? `You're signed in as ${user.email ?? "another account"}, which isn't a staff account at ${tenant.name}. Sign in with a ${tenant.name} account below.`
     : undefined;
@@ -28,7 +28,7 @@ async function TenantLogin({ params }: PageProps<"/o/[org]/login">) {
       subtitle="Cafe POS"
       logoUrl={tenant.logo_url}
       logoOnDarkUrl={tenant.logo_on_dark_url}
-      fallback={`${base}/pos`}
+      fallback={base || "/"}
     />
   );
 }

@@ -66,12 +66,9 @@ export async function recomputeMenuCosts(orgId: string): Promise<void> {
     return cost === item.unit_cost ? [] : [{ id: item.id, cost }];
   });
 
-  const now = new Date().toISOString();
-  const results = await Promise.all(
-    updates.map((u) =>
-      supabase.from("menu_items").update({ unit_cost: u.cost, cost_updated_at: now }).eq("id", u.id).eq("org_id", orgId)
-    )
-  );
-  const failed = results.find((r) => r.error);
-  if (failed?.error) throw new Error(`Could not update menu costs: ${failed.error.message}`);
+  if (updates.length === 0) return;
+  // Via set_menu_costs (migration 8): recipe/ingredient editors may not hold
+  // menu.manage, but the cost cache must still follow their change.
+  const { error } = await supabase.rpc("set_menu_costs", { p_org: orgId, p_costs: updates });
+  if (error) throw new Error(`Could not update menu costs: ${error.message}`);
 }

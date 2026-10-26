@@ -18,7 +18,7 @@ export default async function RestaurantPage({ params }: PageProps<"/admin/resta
 
   const [{ data: domains }, { data: members }, { data: outlets }, { count: orders }] = await Promise.all([
     admin.from("org_domains").select("id, hostname").eq("org_id", id).order("created_at"),
-    admin.from("org_members").select("user_id, role, active").eq("org_id", id),
+    admin.from("org_members").select("user_id, role, active, org_role:org_roles!org_members_role_fk(name)").eq("org_id", id),
     admin.from("outlets").select("id, name, active").eq("org_id", id),
     admin.from("orders").select("id", { count: "exact", head: true }).eq("org_id", id),
   ]);
@@ -82,7 +82,7 @@ export default async function RestaurantPage({ params }: PageProps<"/admin/resta
                   {profiles?.find((p) => p.id === m.user_id)?.full_name ?? "—"}{" "}
                   <span className="text-neutral-400">{emails?.find((e) => e.id === m.user_id)?.email}</span>
                 </span>
-                <span className="capitalize text-neutral-500">{m.role}</span>
+                <span className="text-neutral-500">{m.role === "owner" ? "Owner" : (m.org_role?.name ?? "—")}</span>
               </li>
             ))}
           </ul>

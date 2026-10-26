@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireManagerPage } from "@/lib/auth";
+import { requirePermPage } from "@/lib/auth";
 import { loadCostingData } from "@/lib/costing";
 import { toTaxSettings } from "@/lib/costing-model";
 import { createClient } from "@/lib/supabase/server";
@@ -8,7 +8,7 @@ import { RecipeEditor } from "./recipe-editor";
 
 export default async function RecipePage({ params }: PageProps<"/o/[org]/recipes/[id]">) {
   const { org: slug, id } = await params;
-  const { org } = await requireManagerPage(slug, await tenantBase(slug));
+  const { org } = await requirePermPage(slug, await tenantBase(slug), "recipes.manage");
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
   const supabase = await createClient();

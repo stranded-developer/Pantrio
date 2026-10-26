@@ -2,6 +2,7 @@ import "server-only";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { ALL_PERMISSIONS, firstAllowedPath, isPermission, type Permission } from "./permissions";
 
 // Data Access Layer: the single place a session is verified (FOKAS D25:
 // getClaims() here, local JWT verify; getUser() only in proxy.ts).
@@ -11,8 +12,14 @@ import { createClient } from "@/lib/supabase/server";
 // redirect target. Every money function re-checks in SQL, which is the
 // actual boundary (FOKAS D14).
 
-export type OrgRole = "owner" | "manager" | "cashier";
-export type Membership = { role: OrgRole; org: { id: string; name: string; slug: string } };
+export type Membership = {
+  org: { id: string; name: string; slug: string };
+  isOwner: boolean;
+  roleId: string | null;
+  /** "Owner", or the role's name ("Manager", "Cashier", a custom role). */
+  roleName: string;
+  permissions: Permission[];
+};
 
 export const getCurrentUser = cache(async () => {
   const supabase = await createClient();
@@ -40,12 +47,22 @@ export const getMemberships = cache(async (): Promise<Membership[]> => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("org_members")
-    .select("role, org:organizations!inner(id, name, slug)")
+    .select("role, role_id, org:organizations!inner(id, name, slug), org_role:org_roles!org_members_role_fk(name, permissions)")
     .eq("user_id", user.id)
     .eq("active", true)
     .order("created_at");
   if (error) throw new Error(`Could not load restaurants: ${error.message}`);
-  return (data ?? []) as unknown as Membership[];
+  return (data ?? []).map((m) => {
+    const isOwner = m.role === "owner";
+    const role = m.org_role as { name: string; permissions: string[] } | null;
+    return {
+      org: m.org as unknown as Membership["org"],
+      isOwner,
+      roleId: m.role_id,
+      roleName: isOwner ? "Owner" : (role?.name ?? "No role"),
+      permissions: isOwner ? ALL_PERMISSIONS : (role?.permissions ?? []).filter(isPermission),
+    };
+  });
 });
 
 /** The membership for a slug, or null. Never reveals whether the org exists. */
@@ -67,29 +84,40 @@ export async function requireMembershipPage(slug: string, base: string): Promise
   return membership;
 }
 
-/** Manager pages: a cashier lands on the POS, not a crash screen (FOKAS D29). */
-export async function requireManagerPage(slug: string, base: string): Promise<Membership> {
+export function can(m: Membership, perm: Permission): boolean {
+  return m.isOwner || m.permissions.includes(perm);
+}
+
+/** Where this member should land: the first screen their role opens. */
+export function homePath(m: Membership, base: string): string {
+  const p = firstAllowedPath(m.permissions, m.isOwner);
+  return p ? `${base}${p}` : `${base}/no-access`;
+}
+
+/**
+ * A page that needs a permission. Without it you land on the first screen
+ * your role does open — a stale bookmark is not an error (FOKAS D29).
+ */
+export async function requirePermPage(slug: string, base: string, perm: Permission): Promise<Membership> {
   const m = await requireMembershipPage(slug, base);
-  if (!isManager(m.role)) redirect(`${base}/pos`);
+  if (!can(m, perm)) redirect(homePath(m, base));
   return m;
 }
 
 export async function requireOwnerPage(slug: string, base: string): Promise<Membership> {
   const m = await requireMembershipPage(slug, base);
-  if (m.role !== "owner") redirect(`${base}/pos`);
+  if (!m.isOwner) redirect(homePath(m, base));
   return m;
 }
 
-/** For Server Actions. Throws. */
-export async function requireMembership(slug: string, roles?: OrgRole[]): Promise<Membership> {
+/** For Server Actions. Throws. `need` is a permission, or "owner". */
+export async function requireMembership(slug: string, need?: Permission | "owner"): Promise<Membership> {
   const membership = await findMembership(slug);
   if (!membership) throw new Error("Not signed in to this restaurant.");
-  if (roles && !roles.includes(membership.role)) throw new Error("You don't have permission to do this.");
+  if (need === "owner" ? !membership.isOwner : need && !can(membership, need)) {
+    throw new Error("Your role doesn't allow this.");
+  }
   return membership;
-}
-
-export function isManager(role: OrgRole) {
-  return role === "owner" || role === "manager";
 }
 
 export const isPlatformAdmin = cache(async (): Promise<boolean> => {

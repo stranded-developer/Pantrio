@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatRupiah } from "@pantrio/core";
-import { isManager, requireMembershipPage } from "@/lib/auth";
+import { can, requirePermPage } from "@/lib/auth";
 import { getNames, getOrderDetail, noteOf } from "@/lib/queries/pos";
 import { businessDateToday, getOrgSettings, tenantBase } from "@/lib/tenant";
 import { ReprintButton } from "./reprint-button";
@@ -10,7 +10,8 @@ import { VoidButton } from "./void-button";
 export default async function OrderDetailPage({ params }: PageProps<"/o/[org]/orders/[id]">) {
   const { org: slug, id } = await params;
   const base = await tenantBase(slug);
-  const { org, role } = await requireMembershipPage(slug, base);
+  const m = await requirePermPage(slug, base, "orders.view");
+  const { org } = m;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
   const [{ order, items, payment, lastPrint }, today, settings] = await Promise.all([
@@ -22,9 +23,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/o/[org]/or
   const cashier = (await getNames([order.opened_by])).get(order.opened_by);
 
   const voided = order.status === "voided";
-  const canManage = isManager(role);
+  const mayVoid = can(m, "orders.void");
   const sameBusinessDay = order.business_date === today;
-  const canVoid = canManage && order.status === "paid" && sameBusinessDay;
+  const canVoid = mayVoid && order.status === "paid" && sameBusinessDay;
   const inclusive = order.price_mode === "inclusive";
 
   return (
@@ -80,7 +81,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/o/[org]/or
             <dt>Total</dt>
             <dd className="tabular-nums">{formatRupiah(order.grand_total)}</dd>
           </div>
-          {canManage && order.cost_total !== null && (
+          {can(m, "sales.view") && order.cost_total !== null && (
             <div className="flex justify-between pt-1 text-neutral-500">
               <dt>Ingredient cost</dt>
               <dd className="tabular-nums">{formatRupiah(order.cost_total)}</dd>
@@ -109,7 +110,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/o/[org]/or
 
       {canVoid && <VoidButton orderId={order.id} />}
 
-      {canManage && order.status === "paid" && !sameBusinessDay && (
+      {mayVoid && order.status === "paid" && !sameBusinessDay && (
         <p className="rounded-xl bg-neutral-100 p-4 text-sm text-neutral-600">
           This order is from a previous business day and can no longer be voided. Same-day only, so closed periods
           stay fixed.

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getProfileName, requireMembershipPage, requireUser } from "@/lib/auth";
+import { getProfileName, requirePermPage, requireUser } from "@/lib/auth";
 import { getKitchenOrders } from "@/lib/queries/kitchen";
 import { getCurrentOutlet, getOrgSettings, getOutlets, tenantBase } from "@/lib/tenant";
 import { KitchenBoard } from "./kitchen-board";
@@ -8,7 +8,7 @@ import { KitchenBoard } from "./kitchen-board";
 // device doing one job, so it gets no nav bar to wander off through.
 async function Kitchen({ slug }: { slug: string }) {
   const base = await tenantBase(slug);
-  const { org } = await requireMembershipPage(slug, base);
+  const { org } = await requirePermPage(slug, base, "kitchen.view");
   const user = await requireUser();
   const [outlet, outlets, settings, name] = await Promise.all([
     getCurrentOutlet(org.id),
