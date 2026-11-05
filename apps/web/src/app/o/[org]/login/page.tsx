@@ -15,12 +15,9 @@ async function TenantLogin({ params }: PageProps<"/o/[org]/login">) {
   if (!tenant) notFound();
   const base = await tenantBase(org);
 
-  // Already staff here → the till. Signed in as someone else → the form, so
-  // they can switch account (signing in replaces the session).
-  const user = await getCurrentUser();
-  if (user && (await findMembership(org))) redirect(base || "/");
-
-  // A registered terminal shows the PIN pad (P25); email stays one tap away.
+  // A registered terminal always shows the PIN pad (P25); email stays one
+  // tap away. Checked before the redirect below: a PIN sign-in re-renders
+  // this page signed in, and must stay on the clock in/out screen.
   const terminal = await getTerminal(org);
   if (terminal) {
     return (
@@ -34,6 +31,11 @@ async function TenantLogin({ params }: PageProps<"/o/[org]/login">) {
       />
     );
   }
+
+  // Already staff here → the till. Signed in as someone else → the form, so
+  // they can switch account (signing in replaces the session).
+  const user = await getCurrentUser();
+  if (user && (await findMembership(org))) redirect(base || "/");
   const notice = user
     ? `You're signed in as ${user.email ?? "another account"}, which isn't a staff account at ${tenant.name}. Sign in with a ${tenant.name} account below.`
     : undefined;

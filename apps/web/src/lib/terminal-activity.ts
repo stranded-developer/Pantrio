@@ -16,6 +16,15 @@ export function markTerminalActivity() {
   }
 }
 
+/** The lock screen is showing: whoever signs in next starts a fresh idle clock. */
+export function clearTerminalActivity() {
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    // ignore
+  }
+}
+
 export function readTerminalActivity(): number | null {
   try {
     const v = Number(localStorage.getItem(KEY));

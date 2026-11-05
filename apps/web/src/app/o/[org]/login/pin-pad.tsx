@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { LoginForm } from "@/components/login-form";
 import { LogoOnDark } from "@/components/tenant-logo";
-import { markTerminalActivity } from "@/lib/terminal-activity";
+import { clearTerminalActivity, markTerminalActivity } from "@/lib/terminal-activity";
 import { clock, lockTerminal, pinSignIn, type PinResult } from "./terminal-actions";
 
 // The lock screen of a registered terminal (P25): PIN → who you are → clock
@@ -34,6 +34,9 @@ export function TerminalLogin(props: {
   fallback: string;
 }) {
   const [email, setEmail] = useState(false);
+  // Without this the till could lock the moment the next person signs in,
+  // counting idle time from the previous person's last touch.
+  useEffect(() => clearTerminalActivity(), []);
   if (email) {
     return (
       <div>
@@ -286,14 +289,24 @@ function ClockCamera({
         if (cancelled) return s.getTracks().forEach((t) => t.stop());
         live = s;
         setStream(s);
-        if (video.current) video.current.srcObject = s;
+        setFailed(false); // allowed after the 8 s fallback showed
       })
       .catch(() => setFailed(true));
+    // A permission prompt nobody answers must not block clocking.
+    const giveUp = window.setTimeout(() => {
+      if (!live) setFailed(true);
+    }, 8_000);
     return () => {
+      window.clearTimeout(giveUp);
       cancelled = true;
       live?.getTracks().forEach((t) => t.stop());
     };
   }, []);
+
+  // Attach once both exist (the <video> is not rendered while "failed").
+  useEffect(() => {
+    if (video.current && stream) video.current.srcObject = stream;
+  }, [stream, failed]);
 
   async function take() {
     setBusy(true);

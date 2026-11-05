@@ -63,7 +63,12 @@ export function TimesheetView({
 
       {adding ? (
         <form
-          action={(fd) => run(addEntry(slug, fd), () => setAdding(false))}
+          onSubmit={(e) => {
+            // Not `action=`: React resets the fields after an action, and a
+            // refused save (e.g. a time in the future) should keep the input.
+            e.preventDefault();
+            run(addEntry(slug, new FormData(e.currentTarget)), () => setAdding(false));
+          }}
           className="space-y-3 rounded-2xl bg-white p-6 shadow-sm"
         >
           <h2 className="font-semibold text-neutral-900">Add a shift someone forgot to clock</h2>
@@ -157,7 +162,10 @@ export function TimesheetView({
                   {r.note && <p className="text-xs text-neutral-500">Note: {r.note}</p>}
                   {editing === r.id && (
                     <form
-                      action={(fd) => run(editEntry(slug, r.id, fd), () => setEditing(null))}
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        run(editEntry(slug, r.id, new FormData(e.currentTarget)), () => setEditing(null));
+                      }}
                       className="grid gap-3 rounded-xl bg-neutral-50 p-4 sm:grid-cols-2"
                     >
                       <label className="space-y-1 text-sm text-neutral-700">

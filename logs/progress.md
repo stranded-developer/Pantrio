@@ -4,7 +4,7 @@ Newest first. What shipped, and **how it was verified** (separate claims).
 
 ---
 
-## 2026-11-05 — Terminals, PIN sign-in, time clock with photos (P25) — NOT LIVE YET
+## 2026-11-05 — Terminals, PIN sign-in, time clock with photos (P25)
 
 - Migration 9 (`terminals`, `member_pins`, `time_entries`, private
   `clock-photos` bucket, permission `timesheets.manage` added to Manager
@@ -19,8 +19,20 @@ Newest first. What shipped, and **how it was verified** (separate claims).
   counted), photos, Fix/Edit with reason, add a missed shift.
 - Verified: SQL checks (timeclock_checks.sql all ok, pos_checks 35 ok
   unchanged) on throwaway Postgres; typecheck, lint, tests, build.
-  **Not verified yet:** migration on the live DB, PIN → session minting
-  (generateLink/verifyOtp), photo upload, iPad camera — needs the live project.
+- Migration 9 applied in the Supabase SQL editor (recorded in
+  schema_migrations). Live checks, throwaway restaurants deleted after:
+  script (23/23): PIN → session as that person, photo upload only into own
+  folder, photos visible to owner not cashier, clock in/out, revoke; browser
+  (localhost app on the live DB): register terminal, Lock → PIN pad, wrong
+  PIN, PIN → clock in (camera prompt unanswered → "without photo" after
+  8 s), idle lock at 1 min, Timesheets list + correction.
+- Bugs found and fixed in that test: PIN sign-in skipped the clock screen
+  (login page redirected signed-in users first); the next person's session
+  locked at once (idle clock carried over — the lock screen now clears it);
+  an unanswered camera prompt blocked clocking; Timesheets forms lost input
+  on a refused save.
+- **Not verified:** a real webcam/iPad camera photo end to end (upload path
+  tested by script only) — check on the counter iPad.
 
 ## 2026-10-26 (d) — Roles & permissions, staff rename, receipt preview
 
