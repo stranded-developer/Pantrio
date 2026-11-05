@@ -166,3 +166,44 @@ are visible only to roles with Profit. Owners can rename staff who work
 only for their restaurant (`owner_rename_member`). Menu cost re-costing and
 recipe linking go through `set_menu_costs` / `link_menu_recipe` so Recipes /
 Ingredients editors don't need Menu permission.
+
+### P25 — Registered terminals, PIN sign-in, time clock with photos (2026-11-05)
+User asked for clock in/out "only on the main device", with staff using
+their own identity and an auto-logout, and asked to go straight to PIN
+switching for sales, plus a buddy-punch photo. Decided:
+- **The device is trusted, not an owner login.** A member with
+  `timesheets.manage` registers a browser (laptop or iPad) as a *terminal*
+  for one branch: a random token in an httpOnly cookie, only its hash
+  stored, revoked from Settings → Terminals (any time, by the restaurant —
+  not only by Pantrio). The token alone opens nothing but the PIN pad.
+  iPad note: a home-screen web app has its own cookies, so register from
+  inside the app that will be used.
+- **PIN sign-in mints a normal session.** On a terminal, `/login` shows a
+  PIN pad. `terminal_pin_sign_in()` (service role only, never PostgREST
+  callable by anon) checks terminal + PIN; the server then mints a session
+  for that person with `auth.admin.generateLink` → `verifyOtp` (no email is
+  sent). Everything after runs as that person exactly as today, so P22 holds:
+  `create_order`, `void_order` etc. still take identity from `auth.uid()`
+  and nothing on the money path changed. The secret key is used only to
+  mint the session after SQL said yes (P14/P22 extended).
+  **Rejected:** a terminal-scoped "acting staff" id passed to every money
+  function (rewrites P22 and every function); owner logged in permanently
+  on the till (any cashier gets owner powers).
+- **PINs:** 4–6 digits, unique per restaurant (so no name picking), set by
+  the owner in Settings → Staff, stored as sha256(org:pin) in a table no
+  client can read. 5 wrong PINs within 15 minutes lock that terminal for 15
+  minutes and are audit-logged. Known limit: a 4-digit PIN is guessable by
+  someone standing at the till for hours — the lockout and the audit trail
+  are the defence; owners can choose 6 digits.
+- **Idle lock, not a PIN every 15 minutes.** On a terminal the session is
+  signed out after N idle minutes (default 5, per restaurant) and optionally
+  after every sale; the next person enters their PIN. Off a terminal
+  (phone, home laptop) nothing changes.
+- **Time clock:** clock in/out only with a terminal token, time is the
+  database's `now()`, branch is the terminal's. A webcam photo is taken at
+  clock in/out (private bucket, visible only to `timesheets.manage`); if the
+  camera is unavailable the entry is kept and marked "no photo".
+- **Forgotten clock-out:** an open shift from an earlier business day is
+  marked `missing_out` (hours unknown, P7 spirit — never guessed). Managers
+  correct it; every edit is audit-logged with before/after, and a manager
+  cannot edit their own entries (owners can).

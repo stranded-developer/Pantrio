@@ -23,7 +23,7 @@
     "*.mjs",
     "*.d.mts",
     "*.service",
-    "*.sh",
+    "*.command",
     "*.cmd",
     ".env.example",
     "README.md"

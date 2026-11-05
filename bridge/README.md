@@ -55,24 +55,24 @@ internet. Same printer key, same receipts. It must stay **on, awake and
 plugged in**: a sleeping laptop prints nothing (receipts wait up to 15
 minutes, then can be reprinted from the order screen).
 
-1. **Node 22+** — install from nodejs.org (LTS).
-2. **This folder** — copy `bridge/` onto the laptop (or download the repo
-   ZIP from GitHub and take the `bridge` folder).
-3. **Add the USB receipt printer to the laptop once**
-   - *Mac:* System Settings → Printers & Scanners → Add Printer → pick the
-     USB receipt printer → any driver (e.g. "Generic PostScript"; the bridge
-     prints raw and bypasses it) → Add. Find its exact name with
-     `lpstat -p` (e.g. `USB_Receipt_Printer`).
-   - *Windows:* install the printer (vendor driver, or "Generic / Text
-     Only"), then Printer properties → Sharing → share it as `receipt`.
-4. **Settings** — copy `.env.example` to `.env` in this folder, paste the
-   three lines from Pantrio → Settings → Printers → Add printer, and set
-   - Mac: `PRINTER=cups:USB_Receipt_Printer` (the name from `lpstat -p`)
-   - Windows: `PRINTER=windows:receipt`
-   Test first with `PRINTER=dry-run` (prints to the window, not paper).
-5. **Start** — Mac: double-click or run `./start-laptop.sh` (keeps the Mac
-   awake). Windows: double-click `start-laptop.cmd`, and set Power & sleep
-   to *Never*. Leave the window open; it shows each receipt it prints.
+**Mac** (simplest):
+1. Put this folder anywhere — e.g. your home folder, named `pantrio-bridge`.
+2. Install **Node** (LTS installer from nodejs.org).
+3. System Settings → Printers & Scanners → **Add Printer** → pick the USB
+   receipt printer (e.g. "USB 58series2", Kind: USB) → Use: **Generic
+   PostScript Printer** → Add. (The bridge prints raw; the driver is unused.)
+4. Open the hidden `.env` file in this folder (Terminal:
+   `open -e ~/pantrio-bridge/.env`; or copy `.env.example` to `.env` first)
+   and paste the token from Pantrio → Settings → Printers → Add printer.
+5. Double-click **`Start Pantrio printer.command`**. While `PRINTER=dry-run`
+   it lists the Mac's printers (`cups:USB_58series2` style) — put that line
+   into `.env` as `PRINTER=…`, close the window, double-click again.
+   Leave the window open; it keeps the Mac awake and logs each receipt.
+
+**Windows:** install the printer, share it as `receipt`, copy `.env.example`
+to `.env`, paste the three lines from Settings → Printers, set
+`PRINTER=windows:receipt`, double-click `start-laptop.cmd`, and set Power &
+sleep to *Never*.
 
 Moving to the STB later: add a new printer key for the STB, set it up as
 below, then **Revoke** the laptop's key in Settings → Printers.
