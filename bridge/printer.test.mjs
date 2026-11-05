@@ -33,6 +33,13 @@ test("cups: a paused or unknown printer is not ready (receipts wait instead of f
   assert.equal(await createPrinter("cups:Nope").ready(), false);
 });
 
+test("a bare printer name on a Mac means that CUPS printer", async () => {
+  await fakeCups('echo "printer USB_58Series2 is idle."');
+  const printer = createPrinter("USB_58Series2");
+  assert.equal(printer.label, 'printer "USB_58Series2" (CUPS)');
+  assert.equal(await printer.ready(), true);
+});
+
 test("unknown printer setting explains the options", () => {
   assert.throws(() => createPrinter("bluetooth:x"), /cups:<printer>, windows:<share>/);
 });

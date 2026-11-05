@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useTenant } from "../../tenant-context";
 import Link from "next/link";
-import { addStaff, renameMember, resetPassword, updateMember, type Result } from "./actions";
+import { addStaff, renameMember, resetPassword, setPin, updateMember, type Result } from "./actions";
 
 export type StaffRow = {
   userId: string;
@@ -13,6 +13,8 @@ export type StaffRow = {
   /** "owner" or a role id */
   roleRef: string;
   active: boolean;
+  /** Has a PIN for terminals (P25). */
+  hasPin: boolean;
   isMe: boolean;
 };
 
@@ -115,6 +117,7 @@ export function StaffManager({
                 {row.name} {row.isMe && <span className="text-xs font-normal text-neutral-400">(you)</span>}
               </p>
               {row.email && <p className="text-sm text-neutral-500">{row.email}</p>}
+              <p className="text-xs text-neutral-400">{row.hasPin ? "PIN set" : "No PIN — can't use terminals"}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <select
@@ -134,6 +137,19 @@ export function StaffManager({
                 className="rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-700 disabled:opacity-40"
               >
                 Rename
+              </button>
+              <button
+                disabled={pending}
+                onClick={() => {
+                  const pin = window.prompt(`${row.hasPin ? "New" : "Set a"} terminal PIN for ${row.name} (4–6 digits). Leave empty to remove it.`);
+                  if (pin === null) return;
+                  if (pin.trim() === "") {
+                    if (row.hasPin) run(setPin(slug, row.userId, null));
+                  } else run(setPin(slug, row.userId, pin.trim()));
+                }}
+                className="rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-700 disabled:opacity-40"
+              >
+                {row.hasPin ? "Change PIN" : "Set PIN"}
               </button>
               {!row.isMe && canCreate && (
                 <button

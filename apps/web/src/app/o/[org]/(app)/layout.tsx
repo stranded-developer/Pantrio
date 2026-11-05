@@ -2,10 +2,12 @@ import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { getProfileName, requireMembershipPage, requireUser } from "@/lib/auth";
+import { getTerminal } from "@/lib/terminal";
 import { getCurrentOutlet, getOrgSettings, getOutlets, tenantBase } from "@/lib/tenant";
 import { Nav } from "./nav";
 import { OutletSwitcher } from "./outlet-switcher";
 import { ReadyAlerts } from "./ready-alerts";
+import { LockButton, TerminalLock } from "./terminal-lock";
 import { TenantProvider } from "./tenant-context";
 
 // FOKAS admin shell, per restaurant. Everything that reads the session sits
@@ -15,11 +17,12 @@ async function Shell({ slug, children }: { slug: string; children: ReactNode }) 
   const m = await requireMembershipPage(slug, base);
   const { org } = m;
   const user = await requireUser();
-  const [settings, outlet, outlets, name] = await Promise.all([
+  const [settings, outlet, outlets, name, terminal] = await Promise.all([
     getOrgSettings(org.id),
     getCurrentOutlet(org.id),
     getOutlets(org.id),
     getProfileName(user.id),
+    getTerminal(slug),
   ]);
 
   if (!outlet) {
@@ -52,14 +55,24 @@ async function Shell({ slug, children }: { slug: string; children: ReactNode }) 
             <p className="text-sm font-medium text-neutral-900">{name ?? user.email}</p>
             <p className="text-xs text-neutral-500">{m.roleName}</p>
           </Link>
-          <SignOutButton
-            to={`${base}/login`}
-            className="rounded-lg border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
-          />
+          {terminal ? (
+            <LockButton
+              slug={slug}
+              className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
+            />
+          ) : (
+            <SignOutButton
+              to={`${base}/login`}
+              className="rounded-lg border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+            />
+          )}
         </div>
       </header>
       <main className="flex-1 p-6">{children}</main>
       <ReadyAlerts />
+      {terminal && (
+        <TerminalLock slug={slug} idleMinutes={terminal.idleMinutes} lockAfterSale={terminal.lockAfterSale} />
+      )}
     </TenantProvider>
   );
 }

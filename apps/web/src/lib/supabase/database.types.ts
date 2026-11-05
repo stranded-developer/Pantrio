@@ -177,6 +177,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"member_pins": {
+                  Row: {
+                    "org_id": string,"pin_hash": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "org_id": string,"pin_hash": string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "org_id"?: string,"pin_hash"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "member_pins_org_id_user_id_fkey"
+      columns: ["org_id","user_id"]
+isOneToOne: true
+      referencedRelation: "org_members"
+      referencedColumns: ["org_id","user_id"]
+    }
+                  ]
                 },"menu_categories": {
                   Row: {
                     "active": boolean,"id": string,"name": string,"org_id": string,"sort": number
@@ -349,14 +369,14 @@ isOneToOne: false
                   ]
                 },"org_settings": {
                   Row: {
-                    "day_cutover_hour": number,"logo_on_dark_url": string | null,"logo_url": string | null,"org_id": string,"receipt_footer": string,"receipt_header": string,"receipt_logo_url": string | null,"timezone": string,"updated_at": string,"updated_by": string | null
+                    "day_cutover_hour": number,"logo_on_dark_url": string | null,"logo_url": string | null,"org_id": string,"receipt_footer": string,"receipt_header": string,"receipt_logo_url": string | null,"terminal_idle_minutes": number,"terminal_lock_after_sale": boolean,"timezone": string,"updated_at": string,"updated_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "day_cutover_hour"?: number,"logo_on_dark_url"?: string | null,"logo_url"?: string | null,"org_id": string,"receipt_footer"?: string,"receipt_header"?: string,"receipt_logo_url"?: string | null,"timezone"?: string,"updated_at"?: string,"updated_by"?: string | null
+                    "day_cutover_hour"?: number,"logo_on_dark_url"?: string | null,"logo_url"?: string | null,"org_id": string,"receipt_footer"?: string,"receipt_header"?: string,"receipt_logo_url"?: string | null,"terminal_idle_minutes"?: number,"terminal_lock_after_sale"?: boolean,"timezone"?: string,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Update: {
-                    "day_cutover_hour"?: number,"logo_on_dark_url"?: string | null,"logo_url"?: string | null,"org_id"?: string,"receipt_footer"?: string,"receipt_header"?: string,"receipt_logo_url"?: string | null,"timezone"?: string,"updated_at"?: string,"updated_by"?: string | null
+                    "day_cutover_hour"?: number,"logo_on_dark_url"?: string | null,"logo_url"?: string | null,"org_id"?: string,"receipt_footer"?: string,"receipt_header"?: string,"receipt_logo_url"?: string | null,"terminal_idle_minutes"?: number,"terminal_lock_after_sale"?: boolean,"timezone"?: string,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -673,12 +693,70 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"terminals": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"failed_pins": number,"failed_since": string | null,"id": string,"last_seen_at": string | null,"locked_until": string | null,"name": string,"org_id": string,"outlet_id": string,"revoked_at": string | null,"token_hash": string,"token_prefix": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"failed_pins"?: number,"failed_since"?: string | null,"id"?: string,"last_seen_at"?: string | null,"locked_until"?: string | null,"name": string,"org_id": string,"outlet_id": string,"revoked_at"?: string | null,"token_hash": string,"token_prefix": string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"failed_pins"?: number,"failed_since"?: string | null,"id"?: string,"last_seen_at"?: string | null,"locked_until"?: string | null,"name"?: string,"org_id"?: string,"outlet_id"?: string,"revoked_at"?: string | null,"token_hash"?: string,"token_prefix"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "terminals_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "terminals_outlet_id_org_id_fkey"
+      columns: ["outlet_id","org_id"]
+isOneToOne: false
+      referencedRelation: "outlets"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
+                },"time_entries": {
+                  Row: {
+                    "business_date": string,"clock_in_at": string,"clock_out_at": string | null,"created_at": string,"edited_at": string | null,"edited_by": string | null,"id": string,"in_photo": string | null,"note": string | null,"org_id": string,"out_photo": string | null,"outlet_id": string,"status": Database["public"]['Enums']["time_entry_status"],"terminal_id": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "business_date": string,"clock_in_at": string,"clock_out_at"?: string | null,"created_at"?: string,"edited_at"?: string | null,"edited_by"?: string | null,"id"?: string,"in_photo"?: string | null,"note"?: string | null,"org_id": string,"out_photo"?: string | null,"outlet_id": string,"status"?: Database["public"]['Enums']["time_entry_status"],"terminal_id"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "business_date"?: string,"clock_in_at"?: string,"clock_out_at"?: string | null,"created_at"?: string,"edited_at"?: string | null,"edited_by"?: string | null,"id"?: string,"in_photo"?: string | null,"note"?: string | null,"org_id"?: string,"out_photo"?: string | null,"outlet_id"?: string,"status"?: Database["public"]['Enums']["time_entry_status"],"terminal_id"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "time_entries_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "time_entries_outlet_id_org_id_fkey"
+      columns: ["outlet_id","org_id"]
+isOneToOne: false
+      referencedRelation: "outlets"
+      referencedColumns: ["id","org_id"]
+    },{
+      foreignKeyName: "time_entries_terminal_id_org_id_fkey"
+      columns: ["terminal_id","org_id"]
+isOneToOne: false
+      referencedRelation: "terminals"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
                 }
           }
           Views: {
             "current_product_prices": {
                   Row: {
-                    "created_at": string | null,"effective_from": string | null,"org_id": string | null,"price": number | null,"product_id": string | null
+                    "created_at": string,"effective_from": string,"org_id": string,"price": number,"product_id": string
                   }
                   ComputedFields: never
                   Relationships: [
@@ -693,7 +771,31 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "admin_create_organization":
+            "add_time_entry":
+{ Args: { "p_in": string,"p_note": string,"p_org": string,"p_out": string,"p_outlet": string,"p_user": string }; Returns: {
+              "business_date": string,
+"clock_in_at": string,
+"clock_out_at": string | null,
+"created_at": string,
+"edited_at": string | null,
+"edited_by": string | null,
+"id": string,
+"in_photo": string | null,
+"note": string | null,
+"org_id": string,
+"out_photo": string | null,
+"outlet_id": string,
+"status": Database["public"]['Enums']["time_entry_status"],
+"terminal_id": string | null,
+"user_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "time_entries"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"admin_create_organization":
 { Args: { "p_name": string,"p_owner": string,"p_slug": string }; Returns: {
               "created_at": string,
 "currency": string,
@@ -717,6 +819,82 @@ isOneToOne: false
                            },
 "business_date":
 { Args: { "cutover_hour": number,"ts": string,"tz": string }; Returns: string
+                           },
+"check_clock_photo":
+{ Args: { "p_org": string,"p_photo": string }; Returns: string
+                           },
+"clock_in":
+{ Args: { "p_photo"?: string,"p_token": string }; Returns: {
+              "business_date": string,
+"clock_in_at": string,
+"clock_out_at": string | null,
+"created_at": string,
+"edited_at": string | null,
+"edited_by": string | null,
+"id": string,
+"in_photo": string | null,
+"note": string | null,
+"org_id": string,
+"out_photo": string | null,
+"outlet_id": string,
+"status": Database["public"]['Enums']["time_entry_status"],
+"terminal_id": string | null,
+"user_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "time_entries"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"clock_out":
+{ Args: { "p_photo"?: string,"p_token": string }; Returns: {
+              "business_date": string,
+"clock_in_at": string,
+"clock_out_at": string | null,
+"created_at": string,
+"edited_at": string | null,
+"edited_by": string | null,
+"id": string,
+"in_photo": string | null,
+"note": string | null,
+"org_id": string,
+"out_photo": string | null,
+"outlet_id": string,
+"status": Database["public"]['Enums']["time_entry_status"],
+"terminal_id": string | null,
+"user_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "time_entries"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"clock_terminal":
+{ Args: { "p_token": string }; Returns: {
+              "created_at": string,
+"created_by": string | null,
+"failed_pins": number,
+"failed_since": string | null,
+"id": string,
+"last_seen_at": string | null,
+"locked_until": string | null,
+"name": string,
+"org_id": string,
+"outlet_id": string,
+"revoked_at": string | null,
+"token_hash": string,
+"token_prefix": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "terminals"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"close_stale_shifts":
+{ Args: { "p_org": string }; Returns: undefined
                            },
 "create_default_roles":
 { Args: { "p_org": string }; Returns: undefined
@@ -760,6 +938,12 @@ isOneToOne: false
 "create_print_device":
 { Args: { "p_name": string,"p_org": string,"p_outlet": string }; Returns: string
                            },
+"create_terminal":
+{ Args: { "p_name": string,"p_org": string,"p_outlet": string }; Returns: string
+                           },
+"dearmor":
+{ Args: { "": string }; Returns: string
+                           },
 "device_claim_print_jobs":
 { Args: { "p_limit"?: number,"p_token": string }; Returns: {
               "attempts": number,"id": string,"kind": Database["public"]['Enums']["print_kind"],"order_id": string
@@ -789,6 +973,36 @@ isOneToOne: false
 "device_receipt_data":
 { Args: { "p_order": string,"p_token": string }; Returns: Json
                            },
+"edit_time_entry":
+{ Args: { "p_entry": string,"p_in": string,"p_note": string,"p_out": string }; Returns: {
+              "business_date": string,
+"clock_in_at": string,
+"clock_out_at": string | null,
+"created_at": string,
+"edited_at": string | null,
+"edited_by": string | null,
+"id": string,
+"in_photo": string | null,
+"note": string | null,
+"org_id": string,
+"out_photo": string | null,
+"outlet_id": string,
+"status": Database["public"]['Enums']["time_entry_status"],
+"terminal_id": string | null,
+"user_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "time_entries"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"gen_random_uuid":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"gen_salt":
+{ Args: { "": string }; Returns: string
+                           },
 "has_perm":
 { Args: { "p_org": string,"p_perm": string }; Returns: boolean
                            },
@@ -807,11 +1021,17 @@ isOneToOne: false
 "link_menu_recipe":
 { Args: { "p_menu_item": string,"p_recipe": string }; Returns: undefined
                            },
+"my_clock_status":
+{ Args: { "p_org": string }; Returns: Json
+                           },
 "my_permissions":
 { Args: { "p_org": string }; Returns: (string)[]
                            },
 "org_business_date":
 { Args: { "p_org": string,"ts"?: string }; Returns: string
+                           },
+"org_pin_holders":
+{ Args: { "p_org": string }; Returns: string[]
                            },
 "org_role_of":
 { Args: { "p_org": string }; Returns: Database["public"]['Enums']["org_role"]
@@ -822,14 +1042,26 @@ isOneToOne: false
 "permission_keys":
 { Args: Record<PropertyKey, never>; Returns: (string)[]
                            },
+"pgp_armor_headers":
+{ Args: { "": string }; Returns: Record<string, unknown>[]
+                           },
+"pin_hash":
+{ Args: { "p_org": string,"p_pin": string }; Returns: string
+                           },
 "queue_reprint":
 { Args: { "p_order": string }; Returns: undefined
+                           },
+"refresh_time_entries":
+{ Args: { "p_org": string }; Returns: undefined
                            },
 "resolve_tenant_host":
 { Args: { "p_host": string }; Returns: string
                            },
 "revoke_print_device":
 { Args: { "p_device": string }; Returns: undefined
+                           },
+"revoke_terminal":
+{ Args: { "p_terminal": string }; Returns: undefined
                            },
 "sales_summary":
 { Args: { "p_from": string,"p_org": string,"p_outlet"?: string,"p_to": string }; Returns: Json
@@ -840,8 +1072,14 @@ isOneToOne: false
 "set_kitchen_done":
 { Args: { "p_done": boolean,"p_order": string }; Returns: undefined
                            },
+"set_member_pin":
+{ Args: { "p_org": string,"p_pin": string,"p_user": string }; Returns: undefined
+                           },
 "set_menu_costs":
 { Args: { "p_costs": Json,"p_org": string }; Returns: undefined
+                           },
+"set_terminal_options":
+{ Args: { "p_idle_minutes": number,"p_lock_after_sale": boolean,"p_org": string }; Returns: undefined
                            },
 "shares_org_with":
 { Args: { "p_user": string }; Returns: boolean
@@ -850,6 +1088,36 @@ isOneToOne: false
 { Args: { "p_slug": string }; Returns: {
               "logo_on_dark_url": string,"logo_url": string,"name": string,"slug": string
             }[]
+                           },
+"terminal_from_token":
+{ Args: { "p_token": string }; Returns: {
+              "created_at": string,
+"created_by": string | null,
+"failed_pins": number,
+"failed_since": string | null,
+"id": string,
+"last_seen_at": string | null,
+"locked_until": string | null,
+"name": string,
+"org_id": string,
+"outlet_id": string,
+"revoked_at": string | null,
+"token_hash": string,
+"token_prefix": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "terminals"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"terminal_info":
+{ Args: { "p_token": string }; Returns: {
+              "idle_minutes": number,"lock_after_sale": boolean,"org_id": string,"outlet_id": string,"outlet_name": string,"slug": string,"terminal_id": string,"terminal_name": string,"token_prefix": string
+            }[]
+                           },
+"terminal_pin_sign_in":
+{ Args: { "p_pin": string,"p_token": string }; Returns: Json
                            },
 "void_order":
 { Args: { "p_order": string,"p_reason": string }; Returns: {
@@ -889,7 +1157,7 @@ isOneToOne: false
       } }
           }
           Enums: {
-            "cost_period": "monthly"|"yearly","fixed_cost_category": "rent"|"electricity"|"water"|"gas"|"internet"|"other","income_tax_mode": "pph_final_umkm"|"custom"|"none","order_status": "open"|"awaiting_payment"|"paid"|"voided"|"refunded","org_role": "owner"|"manager"|"cashier","payment_method": "cash"|"qris"|"va"|"card","payment_provider": "cash"|"midtrans"|"edc","payment_status": "pending"|"paid"|"expired"|"failed"|"refunded","price_mode": "exclusive"|"inclusive","print_kind": "receipt"|"reprint"|"kitchen","print_status": "queued"|"claimed"|"printed"|"failed","recipe_kind": "menu_item"|"prep","unit_code": "mg"|"g"|"ons"|"kg"|"ml"|"l"|"pcs"|"lusin"
+            "cost_period": "monthly"|"yearly","fixed_cost_category": "rent"|"electricity"|"water"|"gas"|"internet"|"other","income_tax_mode": "pph_final_umkm"|"custom"|"none","order_status": "open"|"awaiting_payment"|"paid"|"voided"|"refunded","org_role": "owner"|"manager"|"cashier","payment_method": "cash"|"qris"|"va"|"card","payment_provider": "cash"|"midtrans"|"edc","payment_status": "pending"|"paid"|"expired"|"failed"|"refunded","price_mode": "exclusive"|"inclusive","print_kind": "receipt"|"reprint"|"kitchen","print_status": "queued"|"claimed"|"printed"|"failed","recipe_kind": "menu_item"|"prep","time_entry_status": "open"|"closed"|"missing_out","unit_code": "mg"|"g"|"ons"|"kg"|"ml"|"l"|"pcs"|"lusin"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1005,7 +1273,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "cost_period": ["monthly", "yearly"],"fixed_cost_category": ["rent", "electricity", "water", "gas", "internet", "other"],"income_tax_mode": ["pph_final_umkm", "custom", "none"],"order_status": ["open", "awaiting_payment", "paid", "voided", "refunded"],"org_role": ["owner", "manager", "cashier"],"payment_method": ["cash", "qris", "va", "card"],"payment_provider": ["cash", "midtrans", "edc"],"payment_status": ["pending", "paid", "expired", "failed", "refunded"],"price_mode": ["exclusive", "inclusive"],"print_kind": ["receipt", "reprint", "kitchen"],"print_status": ["queued", "claimed", "printed", "failed"],"recipe_kind": ["menu_item", "prep"],"unit_code": ["mg", "g", "ons", "kg", "ml", "l", "pcs", "lusin"]
+            "cost_period": ["monthly", "yearly"],"fixed_cost_category": ["rent", "electricity", "water", "gas", "internet", "other"],"income_tax_mode": ["pph_final_umkm", "custom", "none"],"order_status": ["open", "awaiting_payment", "paid", "voided", "refunded"],"org_role": ["owner", "manager", "cashier"],"payment_method": ["cash", "qris", "va", "card"],"payment_provider": ["cash", "midtrans", "edc"],"payment_status": ["pending", "paid", "expired", "failed", "refunded"],"price_mode": ["exclusive", "inclusive"],"print_kind": ["receipt", "reprint", "kitchen"],"print_status": ["queued", "claimed", "printed", "failed"],"recipe_kind": ["menu_item", "prep"],"time_entry_status": ["open", "closed", "missing_out"],"unit_code": ["mg", "g", "ons", "kg", "ml", "l", "pcs", "lusin"]
           }
         }
 } as const

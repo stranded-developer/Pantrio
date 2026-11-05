@@ -16,11 +16,13 @@ const ITEMS: { path: string; label: string; perm: Permission | Permission[] | "o
   { path: "/menu", label: "Menu", perm: "menu.manage" },
   { path: "/recipes", label: "Recipes", perm: "recipes.manage" },
   { path: "/ingredients", label: "Ingredients", perm: "ingredients.manage" },
+  { path: "/timesheets", label: "Timesheets", perm: "timesheets.manage" },
 ];
 
 export function settingsPath(perms: readonly Permission[], isOwner: boolean): string | null {
   if (isOwner || perms.includes("settings.manage")) return "/settings";
   if (perms.includes("printers.manage")) return "/settings/printers";
+  if (perms.includes("timesheets.manage")) return "/settings/terminals";
   return null;
 }
 

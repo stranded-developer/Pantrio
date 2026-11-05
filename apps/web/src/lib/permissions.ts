@@ -14,6 +14,7 @@ export const PERMISSIONS = [
   { key: "ingredients.manage", label: "Ingredients", detail: "Ingredients, brands, prices, suppliers", path: "/ingredients" },
   { key: "settings.manage", label: "Settings", detail: "Tax & service, receipt, logo, business day", path: "/settings" },
   { key: "printers.manage", label: "Printers", detail: "Add and revoke receipt printer keys", path: "/settings/printers" },
+  { key: "timesheets.manage", label: "Timesheets", detail: "See and correct clock-ins; register terminals", path: "/timesheets" },
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number]["key"];

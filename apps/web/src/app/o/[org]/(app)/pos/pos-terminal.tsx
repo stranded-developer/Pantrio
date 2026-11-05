@@ -9,6 +9,7 @@ import {
   type PosTaxRules,
 } from "@pantrio/core";
 import type { MenuCategory, MenuItem } from "@/lib/queries/pos";
+import { SALE_DONE_EVENT } from "@/lib/terminal-activity";
 import { useTenant } from "../tenant-context";
 import { reprintReceipt, submitCashOrder } from "./actions";
 
@@ -140,6 +141,8 @@ export function PosTerminal({ categories, items, rules }: Props) {
     setPriority(false);
     setStage("ordering");
     setRequestId(newRequestId());
+    // A finished sale (not a cleared cart): a terminal may lock now (P25).
+    if (paid) window.dispatchEvent(new Event(SALE_DONE_EVENT));
   }
 
   async function handleCharge() {

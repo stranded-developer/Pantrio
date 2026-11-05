@@ -96,6 +96,13 @@ export function createPrinter(spec) {
     };
   }
 
+  // A bare printer name on a Mac/Linux laptop (e.g. "USB_58Series2", as
+  // `lpstat -p` shows it) means that CUPS printer — the "cups:" prefix is easy
+  // to forget.
+  if (/^[\w.@-]+$/.test(spec) && process.platform !== "win32") {
+    return createPrinter(`cups:${spec}`);
+  }
+
   throw new Error(
     `Unrecognised PRINTER "${spec}". Use usb:/dev/usb/lp0, tcp://<ip>, cups:<printer>, windows:<share>, or dry-run.`
   );

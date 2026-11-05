@@ -101,6 +101,22 @@ export async function resetPassword(slug: string, userId: string, password: stri
   return error ? { ok: false, error: error.message } : { ok: true, message: "Password changed." };
 }
 
+/** Set (or clear, with null) the PIN used on terminals. Owner only; unique per restaurant (P25). */
+export async function setPin(slug: string, userId: string, pin: string | null): Promise<Result> {
+  const { org } = await requireMembership(slug, "owner");
+  if (pin !== null && !/^\d{4,6}$/.test(pin)) return { ok: false, error: "A PIN is 4 to 6 digits." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_member_pin", {
+    p_org: org.id,
+    p_user: userId,
+    // null clears; the generated type doesn't know the argument is nullable.
+    p_pin: pin as string,
+  });
+  if (error) return { ok: false, error: error.message.replace(/^.*?:\s*(?=[A-Z])/, "") };
+  revalidatePath(`/o/${slug}/settings/staff`);
+  return { ok: true, message: pin ? "PIN saved. Tell them in person." : "PIN removed." };
+}
+
 /** Correct a staff member's name (shown on receipts). Owner only; SQL refuses people who also work elsewhere. */
 export async function renameMember(slug: string, userId: string, name: string): Promise<Result> {
   const { org } = await requireMembership(slug, "owner");

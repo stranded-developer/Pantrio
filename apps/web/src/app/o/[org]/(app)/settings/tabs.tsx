@@ -10,6 +10,7 @@ const TABS: { path: string; label: string; need: Permission | "owner" }[] = [
   { path: "/settings/staff", label: "Staff", need: "owner" },
   { path: "/settings/roles", label: "Roles", need: "owner" },
   { path: "/settings/printers", label: "Printers", need: "printers.manage" },
+  { path: "/settings/terminals", label: "Terminals", need: "timesheets.manage" },
   { path: "/settings/branches", label: "Branches", need: "owner" },
 ];
 

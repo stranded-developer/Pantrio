@@ -10,10 +10,12 @@ export default async function StaffPage({ params }: PageProps<"/o/[org]/settings
   const me = await getCurrentUser();
   const supabase = await createClient();
 
-  const [{ data: members }, { data: roles }] = await Promise.all([
+  const [{ data: members }, { data: roles }, { data: pinHolders }] = await Promise.all([
     supabase.from("org_members").select("user_id, role, role_id, active, created_at").eq("org_id", org.id).order("created_at"),
     supabase.from("org_roles").select("id, name").eq("org_id", org.id).order("name"),
+    supabase.rpc("org_pin_holders", { p_org: org.id }),
   ]);
+  const hasPin = new Set((pinHolders ?? []) as string[]);
   const ids = (members ?? []).map((m) => m.user_id);
   const [{ data: profiles }, emails] = await Promise.all([
     supabase.from("profiles").select("id, full_name").in("id", ids),
@@ -30,6 +32,7 @@ export default async function StaffPage({ params }: PageProps<"/o/[org]/settings
     email: emailOf.get(m.user_id) ?? null,
     roleRef: m.role === "owner" ? "owner" : (m.role_id ?? ""),
     active: m.active,
+    hasPin: hasPin.has(m.user_id),
     isMe: m.user_id === me?.id,
   }));
 
