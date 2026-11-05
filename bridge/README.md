@@ -48,6 +48,35 @@ ssh root@<box-ip> '
 
 Logs: `journalctl -u pantrio-bridge -f`.
 
+## Laptop instead of the STB (temporary)
+
+Any laptop on the restaurant Wi-Fi can stand in — the bridge only needs
+internet. Same printer key, same receipts. It must stay **on, awake and
+plugged in**: a sleeping laptop prints nothing (receipts wait up to 15
+minutes, then can be reprinted from the order screen).
+
+1. **Node 22+** — install from nodejs.org (LTS).
+2. **This folder** — copy `bridge/` onto the laptop (or download the repo
+   ZIP from GitHub and take the `bridge` folder).
+3. **Add the USB receipt printer to the laptop once**
+   - *Mac:* System Settings → Printers & Scanners → Add Printer → pick the
+     USB receipt printer → any driver (e.g. "Generic PostScript"; the bridge
+     prints raw and bypasses it) → Add. Find its exact name with
+     `lpstat -p` (e.g. `USB_Receipt_Printer`).
+   - *Windows:* install the printer (vendor driver, or "Generic / Text
+     Only"), then Printer properties → Sharing → share it as `receipt`.
+4. **Settings** — copy `.env.example` to `.env` in this folder, paste the
+   three lines from Pantrio → Settings → Printers → Add printer, and set
+   - Mac: `PRINTER=cups:USB_Receipt_Printer` (the name from `lpstat -p`)
+   - Windows: `PRINTER=windows:receipt`
+   Test first with `PRINTER=dry-run` (prints to the window, not paper).
+5. **Start** — Mac: double-click or run `./start-laptop.sh` (keeps the Mac
+   awake). Windows: double-click `start-laptop.cmd`, and set Power & sleep
+   to *Never*. Leave the window open; it shows each receipt it prints.
+
+Moving to the STB later: add a new printer key for the STB, set it up as
+below, then **Revoke** the laptop's key in Settings → Printers.
+
 ## Moving FOKAS's box over (later)
 
 FOKAS's STB keeps running the FOKAS bridge against the FOKAS database until

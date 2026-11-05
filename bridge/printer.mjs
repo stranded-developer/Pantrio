@@ -1,13 +1,21 @@
-import { access, open } from "node:fs/promises";
+import { execFile, spawn } from "node:child_process";
+import { access, open, rm, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import net from "node:net";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 /**
  * Where the bytes go, from the PRINTER setting:
  *
- *   usb:/dev/usb/lp0      USB printer plugged into this box
+ *   usb:/dev/usb/lp0      USB printer plugged into this box (the STB, Linux)
  *   tcp://192.168.1.50    LAN printer (port 9100 unless given)
+ *   cups:<queue>          a printer added in macOS (or Linux CUPS) — laptop stand-in
+ *   windows:<share>       a shared printer on a Windows laptop
  *   dry-run               print to the log instead — for testing without paper
+ *
+ * cups: and windows: send the same raw ESC/POS bytes as usb:, bypassing any
+ * driver, so the receipt (logo, big number, cut) is identical.
  */
 export function createPrinter(spec) {
   if (!spec || spec === "dry-run") {
@@ -55,7 +63,42 @@ export function createPrinter(spec) {
     };
   }
 
-  throw new Error(`Unrecognised PRINTER "${spec}". Use usb:/dev/usb/lp0, tcp://<ip>, or dry-run.`);
+  if (spec.startsWith("cups:")) {
+    const queue = spec.slice(5);
+    return {
+      label: `printer "${queue}" (CUPS)`,
+      // `lpstat -p` fails for an unknown queue and says "disabled" when paused.
+      ready: () =>
+        run("lpstat", ["-p", queue])
+          .then((out) => !/disabled/i.test(out))
+          .catch(() => false),
+      send: (bytes) => pipe("lp", ["-d", queue, "-o", "raw", "-t", "Pantrio receipt"], bytes),
+    };
+  }
+
+  if (spec.startsWith("windows:")) {
+    const share = spec.slice(8);
+    const target = `\\\\localhost\\${share}`;
+    return {
+      label: `Windows printer share "${share}"`,
+      // Windows has no cheap "is the printer on" check for a raw share; a
+      // failed copy is retried like any other failed job.
+      ready: async () => true,
+      send: async (bytes) => {
+        const file = join(tmpdir(), `pantrio-receipt-${process.pid}-${Date.now()}.bin`);
+        await writeFile(file, bytes);
+        try {
+          await run("cmd.exe", ["/c", "copy", "/b", file, target]);
+        } finally {
+          await rm(file, { force: true });
+        }
+      },
+    };
+  }
+
+  throw new Error(
+    `Unrecognised PRINTER "${spec}". Use usb:/dev/usb/lp0, tcp://<ip>, cups:<printer>, windows:<share>, or dry-run.`
+  );
 }
 
 function probe(host, port) {
@@ -83,5 +126,27 @@ function sendTcp(host, port, bytes) {
       reject(new Error(`Printer ${host}:${port} timed out`));
     });
     socket.once("error", reject);
+  });
+}
+
+function run(cmd, args) {
+  return new Promise((resolve, reject) =>
+    execFile(cmd, args, { timeout: 15_000 }, (err, stdout, stderr) =>
+      err ? reject(new Error(`${cmd}: ${(stderr || err.message).trim()}`)) : resolve(String(stdout))
+    )
+  );
+}
+
+/** Run a command with `bytes` on stdin (lp reads the job from stdin). */
+function pipe(cmd, args, bytes) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, { stdio: ["pipe", "ignore", "pipe"] });
+    let stderr = "";
+    child.stderr.on("data", (d) => (stderr += d));
+    child.once("error", reject);
+    child.once("close", (code) =>
+      code === 0 ? resolve() : reject(new Error(`${cmd} exited ${code}: ${stderr.trim()}`))
+    );
+    child.stdin.end(Buffer.from(bytes));
   });
 }

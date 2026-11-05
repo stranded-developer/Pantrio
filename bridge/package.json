@@ -23,6 +23,9 @@
     "*.mjs",
     "*.d.mts",
     "*.service",
+    "*.sh",
+    "*.cmd",
+    ".env.example",
     "README.md"
   ]
 }
