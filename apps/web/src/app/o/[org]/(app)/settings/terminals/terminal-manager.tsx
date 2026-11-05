@@ -13,8 +13,8 @@ export type TerminalRow = {
   tokenPrefix: string;
   lastSeen: string | null;
   revoked: boolean;
-  /** Locked after wrong PINs, until this time. */
-  lockedUntil: string | null;
+  /** Locked after 5 wrong PINs (P26) — until an owner's password is reset. */
+  lockedAt: string | null;
   isThisDevice: boolean;
 };
 
@@ -115,8 +115,11 @@ export function TerminalManager({
                 {outlets.length > 1 && `${t.outlet} · `}
                 <code>{t.tokenPrefix}…</code> ·{" "}
                 {t.revoked ? "revoked" : t.lastSeen ? `last used ${when(t.lastSeen)}` : "not used yet"}
-                {!t.revoked && t.lockedUntil && (
-                  <span className="text-red-700"> · locked after wrong PINs until {when(t.lockedUntil)}</span>
+                {!t.revoked && t.lockedAt && (
+                  <span className="block text-red-700">
+                    Locked {when(t.lockedAt)} after 5 wrong PINs. It unlocks when an owner resets their password: the
+                    reset email (sent from the locked screen) or Pantrio support.
+                  </span>
                 )}
               </p>
             </div>

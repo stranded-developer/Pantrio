@@ -93,3 +93,27 @@ export async function removeDomain(orgId: string, domainId: string): Promise<Res
   revalidatePath(`/admin/restaurants/${orgId}`);
   return { ok: true };
 }
+
+/**
+ * A restaurant's till locked itself after 5 wrong PINs (P26) and the owner
+ * can't use the reset email: set a new password for one of its owners. That
+ * signs the owner out everywhere and unlocks the restaurant's terminals.
+ */
+export async function resetOwnerPassword(orgId: string, userId: string, password: string): Promise<Result> {
+  await requirePlatformAdmin();
+  if (password.length < 8) return { ok: false, error: "Password must be at least 8 characters." };
+  const admin = createServiceClient();
+  const { data: m } = await admin
+    .from("org_members")
+    .select("role, active")
+    .eq("org_id", orgId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!m || m.role !== "owner" || !m.active) return { ok: false, error: "That person is not an active owner here." };
+  const { error } = await admin.auth.admin.updateUserById(userId, { password });
+  if (error) return { ok: false, error: error.message };
+  await admin.rpc("admin_end_sessions", { p_user: userId });
+  const { data: n } = await admin.rpc("admin_unlock_org_terminals", { p_org: orgId });
+  revalidatePath(`/admin/restaurants/${orgId}`);
+  return { ok: true, message: `Password changed${n ? `; ${n} locked till${n === 1 ? "" : "s"} unlocked` : ""}. Give the owner the new password.` };
+}

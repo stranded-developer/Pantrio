@@ -18,6 +18,14 @@
   few egress IPs, so all restaurants share this limit (password sign-in
   already shares "sign-ins" the same way). Raise it if staff see "Too many
   sign-ins right now".
+- **Locked-till reset email (P26)** — needed before an owner can unlock a till
+  by email (the backoffice route works without it):
+  1. Authentication → Emails → SMTP Settings: custom SMTP (e.g. Resend);
+     the built-in mailer only reaches the Supabase team.
+  2. Email Templates → Reset Password: make the link
+     `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/account%3Freset%3D1`
+     (opening it unlocks the owner's tills, then /account asks for a new password).
+  3. URL Configuration → Site URL = the production URL.
 - Built-in email only reaches your own team's addresses. Nothing in Pantrio
   needs email today; set up custom SMTP (e.g. Resend) before adding
   "forgot password".

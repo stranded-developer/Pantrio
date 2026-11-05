@@ -6,7 +6,7 @@ import { PERMISSIONS, type Permission } from "@/lib/permissions";
 import { useTenant } from "../../tenant-context";
 import { deleteRole, saveRole, type Result } from "./actions";
 
-export type RoleRow = { id: string; name: string; permissions: Permission[]; members: number };
+export type RoleRow = { id: string; name: string; permissions: Permission[]; allowPassword: boolean; members: number };
 
 const btn = "rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-40";
 
@@ -20,7 +20,7 @@ export function RoleEditor({ roles }: { roles: RoleRow[] }) {
   const run = (p: Promise<Result>, ok: string, after?: () => void) =>
     startTransition(async () => {
       const r = await p;
-      setMessage(r.ok ? { ok: true, text: ok } : { ok: false, text: r.error });
+      setMessage(r.ok ? { ok: true, text: r.message ? `${ok} ${r.message}` : ok } : { ok: false, text: r.error });
       if (r.ok) {
         after?.();
         router.refresh();
@@ -48,9 +48,11 @@ export function RoleEditor({ roles }: { roles: RoleRow[] }) {
 
       {adding && (
         <RoleCard
-          role={{ id: "", name: "", permissions: [], members: 0 }}
+          role={{ id: "", name: "", permissions: [], allowPassword: false, members: 0 }}
           pending={pending}
-          onSave={(name, perms) => run(saveRole(slug, null, { name, permissions: perms }), `Role “${name}” created.`, () => setAdding(false))}
+          onSave={(name, perms, allowPassword) =>
+            run(saveRole(slug, null, { name, permissions: perms, allowPassword }), `Role “${name}” created.`, () => setAdding(false))
+          }
           onCancel={() => setAdding(false)}
         />
       )}
@@ -60,7 +62,16 @@ export function RoleEditor({ roles }: { roles: RoleRow[] }) {
           key={role.id}
           role={role}
           pending={pending}
-          onSave={(name, perms) => run(saveRole(slug, role.id, { name, permissions: perms }), `Role “${name}” saved.`)}
+          onSave={(name, perms, allowPassword) => {
+            if (
+              role.allowPassword &&
+              !allowPassword &&
+              role.members > 0 &&
+              !window.confirm(`Switch off the passwords of the ${role.members} people in “${role.name}”? They will sign in only with their PIN on a terminal.`)
+            )
+              return;
+            run(saveRole(slug, role.id, { name, permissions: perms, allowPassword }), `Role “${name}” saved.`);
+          }}
           onDelete={() => window.confirm(`Delete the role “${role.name}”?`) && run(deleteRole(slug, role.id), "Role deleted.")}
         />
       ))}
@@ -77,13 +88,18 @@ function RoleCard({
 }: {
   role: RoleRow;
   pending: boolean;
-  onSave: (name: string, perms: Permission[]) => void;
+  onSave: (name: string, perms: Permission[], allowPassword: boolean) => void;
   onCancel?: () => void;
   onDelete?: () => void;
 }) {
   const [name, setName] = useState(role.name);
   const [perms, setPerms] = useState<Set<Permission>>(new Set(role.permissions));
-  const dirty = name !== role.name || perms.size !== role.permissions.length || role.permissions.some((p) => !perms.has(p));
+  const [allowPassword, setAllowPassword] = useState(role.allowPassword);
+  const dirty =
+    name !== role.name ||
+    allowPassword !== role.allowPassword ||
+    perms.size !== role.permissions.length ||
+    role.permissions.some((p) => !perms.has(p));
 
   const toggle = (p: Permission) =>
     setPerms((cur) => {
@@ -123,6 +139,16 @@ function RoleCard({
         ))}
       </div>
 
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-dashed border-neutral-300 p-3">
+        <input type="checkbox" checked={allowPassword} onChange={(e) => setAllowPassword(e.target.checked)} className="mt-0.5 h-5 w-5" />
+        <span>
+          <span className="block font-medium text-neutral-900">Can sign in away from the till</span>
+          <span className="block text-xs text-neutral-500">
+            Email + password, e.g. to edit the menu from home. Unticked = PIN only, on a registered terminal.
+          </span>
+        </span>
+      </label>
+
       <div className="flex flex-wrap justify-between gap-2">
         <div className="flex gap-2">
           <button type="button" onClick={() => setPerms(new Set(PERMISSIONS.map((p) => p.key)))} className={btn}>
@@ -146,7 +172,7 @@ function RoleCard({
           <button
             type="button"
             disabled={pending || !name.trim() || (!dirty && !!role.id)}
-            onClick={() => onSave(name.trim(), [...perms])}
+            onClick={() => onSave(name.trim(), [...perms], allowPassword)}
             className="rounded-xl bg-neutral-900 px-5 py-2 font-medium text-white disabled:opacity-40"
           >
             {role.id ? (dirty ? "Save" : "Saved") : "Create role"}

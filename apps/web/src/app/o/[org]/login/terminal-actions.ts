@@ -4,8 +4,10 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient, hasServiceKey } from "@/lib/supabase/service";
-import { getTerminal, setTerminalCookie, terminalToken } from "@/lib/terminal";
-import { tenantBase } from "@/lib/tenant";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { supabaseEnv } from "@/lib/supabase/env";
+import { getTerminal, personStatus, setTerminalCookie, terminalToken, type Person } from "@/lib/terminal";
+import { platformOrigin, tenantBase } from "@/lib/tenant";
 
 // PIN sign-in on a registered terminal (P25). SQL checks the terminal token
 // and the PIN (and counts wrong guesses); only then does the server mint a
@@ -14,13 +16,11 @@ import { tenantBase } from "@/lib/tenant";
 // as that person through RLS and the money functions, exactly like a
 // password sign-in (P22).
 
-export type PinResult =
-  | { ok: true; name: string; clockedInAt: string | null; missingOutOn: string | null; home: string }
-  | { ok: false; error: string };
+export type PinResult = ({ ok: true } & Person) | { ok: false; error: string; locked?: boolean };
 
 type SignInRow =
   | { ok: true; user_id: string; email: string; name: string | null; org_id: string }
-  | { ok: false; reason: "terminal" | "locked" | "wrong"; locked_until?: string };
+  | { ok: false; reason: "terminal" | "locked" | "wrong"; left?: number };
 
 export async function pinSignIn(slug: string, pin: string): Promise<PinResult> {
   const token = await terminalToken();
@@ -33,12 +33,10 @@ export async function pinSignIn(slug: string, pin: string): Promise<PinResult> {
   if (error || !data) return { ok: false, error: "Could not check the PIN. Try again." };
   const row = data as SignInRow;
   if (!row.ok) {
-    if (row.reason === "terminal") return { ok: false, error: "This terminal was revoked. Sign in with email." };
-    if (row.reason === "locked") {
-      const mins = Math.max(1, Math.ceil((Date.parse(row.locked_until ?? "") - Date.now()) / 60_000) || 15);
-      return { ok: false, error: `Too many wrong PINs. Locked for ${mins} more minute${mins === 1 ? "" : "s"}.` };
-    }
-    return { ok: false, error: "Wrong PIN." };
+    if (row.reason === "terminal") return { ok: false, error: "This terminal was revoked. Ask the owner to set it up again." };
+    if (row.reason === "locked") return { ok: false, locked: true, error: "Locked after 5 wrong PINs." };
+    const left = row.left ?? 0;
+    return { ok: false, error: left <= 2 ? `Wrong PIN. ${left} ${left === 1 ? "try" : "tries"} left before the till locks.` : "Wrong PIN." };
   }
   // The token belongs to another restaurant than the page — never cross over.
   const terminal = await getTerminal(slug);
@@ -64,16 +62,32 @@ export async function pinSignIn(slug: string, pin: string): Promise<PinResult> {
   }
   await setTerminalCookie(token); // keep the 400-day clock running
 
-  const { data: status } = await supabase.rpc("my_clock_status", { p_org: row.org_id });
-  const s = (status ?? {}) as { clocked_in_at?: string | null; missing_out_on?: string | null };
-  const base = await tenantBase(slug);
-  return {
-    ok: true,
-    name: row.name ?? row.email,
-    clockedInAt: s.clocked_in_at ?? null,
-    missingOutOn: s.missing_out_on ?? null,
-    home: base || "/",
-  };
+  return { ok: true, ...(await personStatus(supabase, slug, row.org_id, row.user_id)) };
+}
+
+/**
+ * Locked screen: email the owners a password-reset link. Opening it unlocks
+ * this restaurant's terminals (app/auth/confirm); then they pick a new
+ * password. At most every 10 minutes (SQL), and only while locked.
+ */
+export async function sendOwnerReset(slug: string): Promise<{ ok: boolean; message: string }> {
+  const token = await terminalToken();
+  const terminal = await getTerminal(slug);
+  if (!token || !terminal?.hardLocked || !hasServiceKey()) return { ok: false, message: "This terminal isn't locked." };
+  const { data: targets } = await createServiceClient().rpc("terminal_reset_targets", { p_token: token });
+  if (!targets?.length) return { ok: false, message: "A reset email was sent less than 10 minutes ago. Check the owner's inbox." };
+  const { url, key } = supabaseEnv();
+  // Plain client: the link is opened on the owner's phone, not this browser.
+  const mailer = createSupabaseClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const origin = await platformOrigin();
+  let sent = 0;
+  for (const { email } of targets) {
+    const { error } = await mailer.auth.resetPasswordForEmail(email, { redirectTo: `${origin}/account?reset=1` });
+    if (!error) sent += 1;
+  }
+  if (!sent) return { ok: false, message: "Could not send the email. Ask Pantrio support to reset the owner's password." };
+  const masked = targets.map(({ email }) => email.replace(/^(.).*?(@.*)$/, "$1•••$2")).join(", ");
+  return { ok: true, message: `Reset email sent to ${masked}. Opening the link unlocks this till.` };
 }
 
 export type ClockResult = { ok: true; at: string } | { ok: false; error: string };

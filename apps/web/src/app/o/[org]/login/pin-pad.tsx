@@ -1,18 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { LoginForm } from "@/components/login-form";
 import { LogoOnDark } from "@/components/tenant-logo";
+import type { Person } from "@/lib/terminal";
 import { clearTerminalActivity, markTerminalActivity } from "@/lib/terminal-activity";
-import { clock, lockTerminal, pinSignIn, type PinResult } from "./terminal-actions";
+import { clock, lockTerminal, pinSignIn, sendOwnerReset } from "./terminal-actions";
 
-// The lock screen of a registered terminal (P25): PIN → who you are → clock
-// in/out (with a webcam photo against buddy-punching) or open the till.
+// The lock screen of a registered terminal (P25, P26): PIN → who you are →
+// clock in/out (with a webcam photo against buddy-punching) or open the
+// till. No email sign-in here: till staff have no password. 5 wrong PINs in
+// a row lock the terminal until an owner's password is reset.
 // Times are shown in the device's own clock; the database records now().
 
-type Person = Extract<PinResult, { ok: true }>;
 type Stage =
   | { kind: "pin" }
+  | { kind: "locked" }
   | { kind: "welcome"; person: Person }
   | { kind: "camera"; person: Person; clock: "in" | "out" }
   | { kind: "done"; person: Person; message: string; leaving: boolean };
@@ -25,47 +27,40 @@ function openPos(home: string) {
 }
 const time = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
-export function TerminalLogin(props: {
-  slug: string;
-  title: string;
-  terminalName: string;
-  logoUrl: string | null;
-  logoOnDarkUrl: string | null;
-  fallback: string;
-}) {
-  const [email, setEmail] = useState(false);
-  // Without this the till could lock the moment the next person signs in,
-  // counting idle time from the previous person's last touch.
-  useEffect(() => clearTerminalActivity(), []);
-  if (email) {
-    return (
-      <div>
-        <LoginForm title={props.title} subtitle={`Terminal · ${props.terminalName}`} logoUrl={props.logoUrl} logoOnDarkUrl={props.logoOnDarkUrl} fallback={props.fallback} />
-        <button onClick={() => setEmail(false)} className="fixed bottom-6 left-1/2 -translate-x-1/2 text-sm text-neutral-400 underline">
-          Use PIN instead
-        </button>
-      </div>
-    );
-  }
-  return <PinScreen {...props} onEmail={() => setEmail(true)} />;
-}
-
-function PinScreen({
+export function TerminalLogin({
   slug,
   title,
   terminalName,
   logoUrl,
   logoOnDarkUrl,
-  onEmail,
+  hardLocked,
+  current,
+  start,
 }: {
   slug: string;
   title: string;
   terminalName: string;
   logoUrl: string | null;
   logoOnDarkUrl: string | null;
-  onEmail: () => void;
+  hardLocked: boolean;
+  /** Already signed in here (came from the header's Clock out). */
+  current: Person | null;
+  start: "welcome" | "clock-out";
 }) {
-  const [stage, setStage] = useState<Stage>({ kind: "pin" });
+  const [stage, setStage] = useState<Stage>(() =>
+    hardLocked
+      ? { kind: "locked" }
+      : current && start === "clock-out" && current.clockedInAt
+        ? { kind: "camera", person: current, clock: "out" }
+        : current
+          ? { kind: "welcome", person: current }
+          : { kind: "pin" }
+  );
+  // Without this the till could lock the moment the next person signs in,
+  // counting idle time from the previous person's last touch.
+  useEffect(() => {
+    if (!current) clearTerminalActivity();
+  }, [current]);
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -86,8 +81,9 @@ function PinScreen({
         setError(null);
         const result = await pinSignIn(slug, value);
         setPin("");
-        if (!result.ok) setError(result.error);
-        else setStage({ kind: "welcome", person: result });
+        if (result.ok) setStage({ kind: "welcome", person: result });
+        else if (result.locked) setStage({ kind: "locked" });
+        else setError(result.error);
       });
     },
     [slug]
@@ -107,7 +103,7 @@ function PinScreen({
 
   // Nobody walks away signed in: the welcome screens lock themselves.
   useEffect(() => {
-    if (stage.kind === "pin" || stage.kind === "camera") return;
+    if (stage.kind === "pin" || stage.kind === "camera" || stage.kind === "locked") return;
     const ms = stage.kind === "done" && stage.leaving ? 5_000 : WELCOME_IDLE_MS;
     const t = window.setTimeout(lock, ms);
     return () => window.clearTimeout(t);
@@ -148,17 +144,17 @@ function PinScreen({
               {pending ? "…" : "OK"}
             </Key>
           </div>
-          <button onClick={onEmail} className="w-full text-sm text-neutral-400 underline">
-            Sign in with email instead
-          </button>
         </div>
       )}
+
+      {stage.kind === "locked" && <LockedCard slug={slug} title={title} logoUrl={logoUrl} logoOnDarkUrl={logoOnDarkUrl} />}
 
       {stage.kind === "welcome" && (
         <div className={card}>
           <div>
             <p className="text-sm text-neutral-400">Hi,</p>
             <h1 className="text-2xl font-semibold text-neutral-50">{stage.person.name}</h1>
+            {stage.person.role && <p className="text-sm text-neutral-300">{stage.person.role}</p>}
             <p className="mt-1 text-sm text-neutral-400">
               {stage.person.clockedInAt ? `On shift since ${time(stage.person.clockedInAt)}` : "Not clocked in"}
             </p>
@@ -233,6 +229,49 @@ function PinScreen({
         </div>
       )}
     </main>
+  );
+}
+
+function LockedCard({
+  slug,
+  title,
+  logoUrl,
+  logoOnDarkUrl,
+}: {
+  slug: string;
+  title: string;
+  logoUrl: string | null;
+  logoOnDarkUrl: string | null;
+}) {
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [pending, startTransition] = useTransition();
+  return (
+    <div className="w-full max-w-sm space-y-5 rounded-2xl bg-neutral-900 p-8 shadow-xl">
+      <LogoOnDark name={title} logoUrl={logoUrl} logoOnDarkUrl={logoOnDarkUrl} />
+      <div>
+        <h1 className="text-xl font-semibold text-red-300">Till locked</h1>
+        <p className="mt-2 text-sm text-neutral-300">
+          5 wrong PINs in a row. To unlock it, the owner resets their password: send them the reset email, or contact
+          Pantrio support.
+        </p>
+      </div>
+      {note && <p className={`text-sm ${note.ok ? "text-green-300" : "text-amber-200"}`}>{note.text}</p>}
+      <button
+        disabled={pending}
+        onClick={() =>
+          startTransition(async () => {
+            const r = await sendOwnerReset(slug);
+            setNote({ ok: r.ok, text: r.message });
+          })
+        }
+        className="w-full rounded-lg bg-neutral-50 py-4 font-medium text-neutral-900 disabled:opacity-40"
+      >
+        {pending ? "Sending…" : "Email the owner a reset link"}
+      </button>
+      <button onClick={() => window.location.reload()} className="w-full text-sm text-neutral-400 underline">
+        Unlocked already? Reload
+      </button>
+    </div>
   );
 }
 

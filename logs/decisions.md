@@ -207,3 +207,28 @@ switching for sales, plus a buddy-punch photo. Decided:
   marked `missing_out` (hours unknown, P7 spirit — never guessed). Managers
   correct it; every edit is audit-logged with before/after, and a manager
   cannot edit their own entries (owners can).
+
+### P26 — Till staff are PIN-only; Lock ≠ Clock out; hard lock after repeated wrong PINs (2026-11-05)
+User, after testing P25: less confusing, and security should rest on the PIN
++ registered device. Decided:
+- **Lock and Clock out are separate.** Lock (also the idle / after-sale
+  lock) hands the till over and keeps the shift open; Clock out ends the
+  shift (photo) and locks. **Rejected:** "logging out clocks you out" — the
+  till locks itself many times a shift, which would chop hours into pieces.
+- **Staff without "can sign in away from the till" have no password.** New
+  staff are created with name, role and PIN; Pantrio gives them a hidden
+  address that cannot receive mail and a random password nobody sees.
+  Owners always have email + password; a role can be ticked "can sign in
+  away from the till" (Manager by default). Moving someone onto a PIN-only
+  role switches their password off and ends their sessions — except people
+  who also work for another restaurant, whose login is shared.
+- **No email sign-in on a terminal's PIN screen.**
+- **Wrong PINs (user's rule):** 5 wrong in a row → the terminal is locked.
+  It unlocks only when an owner's password is **reset** — by the reset
+  email the locked screen can send to the owners, or by a platform admin in
+  the backoffice. The reset itself unlocks that restaurant's terminals.
+  **Rejected:** unlocking with the current owner password or an "Unlock"
+  button — whoever can already sign in may be the one guessing (user:
+  "if they can login they know password already"); a timed pause.
+  Needs custom SMTP for the email route (built-in mail only reaches the
+  Supabase team); the backoffice route works without it.

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { getProfileName, requireMembershipPage, requireUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { getTerminal } from "@/lib/terminal";
 import { getCurrentOutlet, getOrgSettings, getOutlets, tenantBase } from "@/lib/tenant";
 import { Nav } from "./nav";
@@ -24,6 +25,15 @@ async function Shell({ slug, children }: { slug: string; children: ReactNode }) 
     getProfileName(user.id),
     getTerminal(slug),
   ]);
+
+  // On a terminal: Lock (hand over, stay on shift) and, while on shift,
+  // Clock out (ends the shift with a photo, then locks) — P26.
+  const onShift = terminal
+    ? Boolean(
+        ((await (await createClient()).rpc("my_clock_status", { p_org: org.id })).data as { clocked_in_at?: string } | null)
+          ?.clocked_in_at
+      )
+    : false;
 
   if (!outlet) {
     return <p className="p-8 text-neutral-600">This restaurant has no active branch. Ask the owner to add one.</p>;
@@ -56,10 +66,21 @@ async function Shell({ slug, children }: { slug: string; children: ReactNode }) 
             <p className="text-xs text-neutral-500">{m.roleName}</p>
           </Link>
           {terminal ? (
-            <LockButton
-              slug={slug}
-              className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
-            />
+            <div className="flex gap-2">
+              {onShift && (
+                // A full navigation: the lock screen takes it from here.
+                <a
+                  href={`${base}/login?clock=out`}
+                  className="rounded-lg border border-amber-400 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100"
+                >
+                  Clock out
+                </a>
+              )}
+              <LockButton
+                slug={slug}
+                className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
+              />
+            </div>
           ) : (
             <SignOutButton
               to={`${base}/login`}

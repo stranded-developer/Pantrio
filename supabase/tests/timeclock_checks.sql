@@ -78,7 +78,7 @@ reset role; update org_members set active = false where user_id = :K and org_id 
 select case when r->>'reason' = 'wrong' then 'ok inactive staff refused' else 'FAIL ' || r::text end
   from terminal_pin_sign_in(:'tok', '1234') r;
 reset role; update org_members set active = true where user_id = :K and org_id = :'org_t';
-update terminals set failed_pins = 0, failed_since = null where token_prefix = left(:'tok', 12);
+update terminals set failed_pins = 0 where token_prefix = left(:'tok', 12);
 reset role; reset role; set role service_role;
 -- 5 wrong → locked, and the right PIN is refused while locked
 select terminal_pin_sign_in(:'tok', '0000')->>'reason' from generate_series(1, 4);
@@ -86,9 +86,42 @@ select case when r->>'reason' = 'locked' then 'ok locked after 5 wrong' else 'FA
   from terminal_pin_sign_in(:'tok', '0001') r;
 select case when r->>'reason' = 'locked' then 'ok right PIN refused while locked' else 'FAIL ' || r::text end
   from terminal_pin_sign_in(:'tok', '1234') r;
+select terminal_pin_sign_in(:'tok', '1234')->>'reason' as still_locked_later \gset
+select case when :'still_locked_later' = 'locked' then 'ok no timed unlock' else 'FAIL' end;
 reset role;
 select 'ok lockout audited' where exists (select 1 from audit_log where org_id = :'org_t' and action = 'terminal_locked');
-update terminals set locked_until = null where token_prefix = left(:'tok', 12);
+select 'ok terminal_info says locked' where (select hard_locked from terminal_info(:'tok'));
+-- reset email targets: owners only, throttled
+set role service_role;
+select 'reset targets (expect 1): ' || count(*) from terminal_reset_targets(:'tok');
+select 'reset targets again (expect 0): ' || count(*) from terminal_reset_targets(:'tok');
+reset role; set role authenticated; select set_config('request.jwt.claim.sub', :O, false);
+select terminal_reset_targets(:'tok');                                  -- clients refused
+select admin_unlock_owner_terminals(:O);                                -- clients refused
+reset role; set role service_role;
+-- a non-owner proving their email does not unlock
+select 'manager unlocks (expect 0): ' || admin_unlock_owner_terminals(:M);
+select 'owner reset unlocks (expect 1): ' || admin_unlock_owner_terminals(:O);
+select case when r->>'ok' = 'true' then 'ok PIN works after reset' else 'FAIL ' || r::text end
+  from terminal_pin_sign_in(:'tok', '1234') r;
+-- a right PIN resets the count: 4 wrong, right, 4 wrong → still open
+select terminal_pin_sign_in(:'tok', '0000') from generate_series(1, 4);
+select terminal_pin_sign_in(:'tok', '1234');
+select terminal_pin_sign_in(:'tok', '0000') from generate_series(1, 4);
+select case when r->>'ok' = 'true' then 'ok count resets on a right PIN' else 'FAIL ' || r::text end
+  from terminal_pin_sign_in(:'tok', '1234') r;
+-- backoffice unlock
+select terminal_pin_sign_in(:'tok', '0000') from generate_series(1, 5);
+select 'backoffice unlocks (expect 1): ' || admin_unlock_org_terminals(:'org_t');
+reset role;
+select 'ok unlock audited' where (select count(*) from audit_log where org_id = :'org_t' and action = 'terminal_unlocked') = 2;
+select 'ok roles: manager may use a password, cashier not'
+  where (select allow_password from org_roles where org_id = :'org_t' and name = 'Manager')
+    and not (select allow_password from org_roles where org_id = :'org_t' and name = 'Cashier');
+set role service_role;
+select 'ok logins helper' where (select count(*) from admin_user_logins(array[:O, :K]::uuid[]) where not password_off) = 2;
+select admin_end_sessions(:K);
+reset role;
 
 -- ── clock in / out ──
 set role authenticated; select set_config('request.jwt.claim.sub', :K, false);

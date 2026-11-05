@@ -6,6 +6,7 @@ import { platformOrigin } from "@/lib/tenant";
 import { CopyLink } from "../../copy-link";
 import { dnsInstructions, domainStatus, vercelConfigured } from "@/lib/vercel-domains";
 import { Domains, type DomainRow } from "./domains";
+import { OwnerReset } from "./owner-reset";
 
 export default async function RestaurantPage({ params }: PageProps<"/admin/restaurants/[id]">) {
   const { id } = await params;
@@ -16,11 +17,12 @@ export default async function RestaurantPage({ params }: PageProps<"/admin/resta
   const { data: org } = await admin.from("organizations").select("id, name, slug, created_at").eq("id", id).maybeSingle();
   if (!org) notFound();
 
-  const [{ data: domains }, { data: members }, { data: outlets }, { count: orders }] = await Promise.all([
+  const [{ data: domains }, { data: members }, { data: outlets }, { count: orders }, { data: locked }] = await Promise.all([
     admin.from("org_domains").select("id, hostname").eq("org_id", id).order("created_at"),
     admin.from("org_members").select("user_id, role, active, org_role:org_roles!org_members_role_fk(name)").eq("org_id", id),
     admin.from("outlets").select("id, name, active").eq("org_id", id),
     admin.from("orders").select("id", { count: "exact", head: true }).eq("org_id", id),
+    admin.from("terminals").select("id, name, hard_locked_at").eq("org_id", id).is("revoked_at", null).not("hard_locked_at", "is", null),
   ]);
   const ids = (members ?? []).map((m) => m.user_id);
   const [{ data: profiles }, { data: emails }] = await Promise.all([
@@ -71,6 +73,17 @@ export default async function RestaurantPage({ params }: PageProps<"/admin/resta
       </section>
 
       <Domains orgId={org.id} rows={rows} vercel={vercelConfigured()} />
+
+      <OwnerReset
+        orgId={org.id}
+        owners={(members ?? [])
+          .filter((m) => m.role === "owner" && m.active)
+          .map((m) => ({
+            id: m.user_id,
+            label: `${profiles?.find((p) => p.id === m.user_id)?.full_name ?? "—"} · ${emails?.find((e) => e.id === m.user_id)?.email ?? ""}`,
+          }))}
+        locked={(locked ?? []).map((t) => ({ id: t.id, name: t.name, at: t.hard_locked_at! }))}
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
         <section className="rounded-2xl bg-white p-6 shadow-sm">

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useTenant } from "../../tenant-context";
 import Link from "next/link";
-import { addStaff, renameMember, resetPassword, setPin, updateMember, type Result } from "./actions";
+import { addStaff, renameMember, resetPassword, setPin, switchOffMemberPassword, updateMember, type Result } from "./actions";
 
 export type StaffRow = {
   userId: string;
@@ -15,6 +15,13 @@ export type StaffRow = {
   active: boolean;
   /** Has a PIN for terminals (P25). */
   hasPin: boolean;
+  /** Created without an email login (P26). */
+  pinOnly: boolean;
+  /** Owner, or a role ticked "can sign in away from the till". */
+  roleAllowsPassword: boolean;
+  passwordOff: boolean;
+  /** Works for this restaurant only — their login is ours to change. */
+  soleOrg: boolean;
   isMe: boolean;
 };
 
@@ -26,7 +33,7 @@ export function StaffManager({
   canCreate,
 }: {
   rows: StaffRow[];
-  roles: { id: string; name: string }[];
+  roles: { id: string; name: string; allowPassword: boolean }[];
   canCreate: boolean;
 }) {
   const router = useRouter();
@@ -42,6 +49,9 @@ export function StaffManager({
     </>
   );
   const [adding, setAdding] = useState(false);
+  const defaultRole = roles.find((r) => r.name === "Cashier")?.id ?? roles[0]?.id ?? "owner";
+  const [newRole, setNewRole] = useState(defaultRole);
+  const newWithPassword = newRole === "owner" || (roles.find((r) => r.id === newRole)?.allowPassword ?? false);
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -85,19 +95,40 @@ export function StaffManager({
 
       {adding && (
         <form
-          action={(fd) => run(addStaff(slug, fd), () => setAdding(false))}
+          onSubmit={(e) => {
+            // Not `action=`: React would clear the fields when a save is refused.
+            e.preventDefault();
+            run(addStaff(slug, new FormData(e.currentTarget)), () => setAdding(false));
+          }}
           className="space-y-3 rounded-2xl bg-white p-6 shadow-sm"
         >
-          <h2 className="font-semibold text-neutral-900">New staff login</h2>
+          <h2 className="font-semibold text-neutral-900">New staff</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             <input name="name" placeholder="Name (shown on receipts)" required className={input} />
-            <input name="email" type="email" placeholder="Email (their username)" required className={input} />
-            <input name="password" type="text" minLength={8} placeholder="Starting password (8+ characters)" required className={input} />
-            <select name="role" defaultValue={roles.find((r) => r.name === "Cashier")?.id ?? roles[0]?.id ?? "owner"} className={input}>
+            <select name="role" value={newRole} onChange={(e) => setNewRole(e.target.value)} className={input}>
               {roleOptions}
             </select>
+            <input
+              name="pin"
+              inputMode="numeric"
+              pattern="[0-9]{4,6}"
+              maxLength={6}
+              required={!newWithPassword}
+              placeholder={newWithPassword ? "Till PIN, 4–6 digits (optional)" : "Till PIN, 4–6 digits"}
+              className={input}
+            />
+            {newWithPassword && (
+              <>
+                <input name="email" type="email" placeholder="Email (their username)" required className={input} />
+                <input name="password" type="text" minLength={8} placeholder="Starting password (8+ characters)" className={input} />
+              </>
+            )}
           </div>
-          <p className="text-xs text-neutral-500">Give them the email and password; they can change it under their account.</p>
+          <p className="text-xs text-neutral-500">
+            {newWithPassword
+              ? "This role can also sign in away from the till: give them the email and password (an email that already has a login keeps its password)."
+              : "PIN only: they sign in on a registered terminal with their PIN. No email or password — nothing to log in with from home. Tell them the PIN in person."}
+          </p>
           <div className="flex gap-2">
             <button type="button" onClick={() => setAdding(false)} className="flex-1 rounded-lg border border-neutral-300 py-3 font-medium text-neutral-700">
               Cancel
@@ -116,8 +147,15 @@ export function StaffManager({
               <p className={`font-medium ${row.active ? "text-neutral-900" : "text-neutral-400 line-through"}`}>
                 {row.name} {row.isMe && <span className="text-xs font-normal text-neutral-400">(you)</span>}
               </p>
-              {row.email && <p className="text-sm text-neutral-500">{row.email}</p>}
+              <p className="text-sm text-neutral-500">{row.pinOnly ? "PIN only — no email login" : row.email}</p>
               <p className="text-xs text-neutral-400">{row.hasPin ? "PIN set" : "No PIN — can't use terminals"}</p>
+              {!row.roleAllowsPassword && !row.pinOnly && !row.passwordOff && (
+                <p className="text-xs text-amber-700">
+                  {row.soleOrg
+                    ? "Still has a password from before — switch it off once their PIN works."
+                    : "Also works elsewhere, so their password stays."}
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <select
@@ -151,7 +189,19 @@ export function StaffManager({
               >
                 {row.hasPin ? "Change PIN" : "Set PIN"}
               </button>
-              {!row.isMe && canCreate && (
+              {!row.isMe && canCreate && !row.roleAllowsPassword && !row.pinOnly && !row.passwordOff && row.soleOrg && (
+                <button
+                  disabled={pending}
+                  onClick={() => {
+                    if (!window.confirm(`Switch off ${row.name}'s password? They will only sign in with their PIN on a terminal.`)) return;
+                    run(switchOffMemberPassword(slug, row.userId));
+                  }}
+                  className="rounded-lg border border-amber-400 px-3 py-2 text-sm text-amber-800 disabled:opacity-40"
+                >
+                  Switch off password
+                </button>
+              )}
+              {!row.isMe && canCreate && row.roleAllowsPassword && !row.pinOnly && (
                 <button
                   disabled={pending}
                   onClick={() => {

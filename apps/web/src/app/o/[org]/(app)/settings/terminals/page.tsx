@@ -4,11 +4,6 @@ import { getTerminal } from "@/lib/terminal";
 import { getOutlets, tenantBase } from "@/lib/tenant";
 import { TerminalManager, type TerminalRow } from "./terminal-manager";
 
-/** A PIN lockout that hasn't expired yet. */
-function stillLocked(until: string | null): string | null {
-  return until && Date.parse(until) > Date.now() ? until : null;
-}
-
 export default async function TerminalsPage({ params }: PageProps<"/o/[org]/settings/terminals">) {
   const { org: slug } = await params;
   const { org } = await requirePermPage(slug, await tenantBase(slug), "timesheets.manage");
@@ -16,7 +11,7 @@ export default async function TerminalsPage({ params }: PageProps<"/o/[org]/sett
   const [{ data }, { data: settings }, outlets, thisDevice] = await Promise.all([
     supabase
       .from("terminals")
-      .select("id, name, outlet_id, token_prefix, last_seen_at, revoked_at, locked_until")
+      .select("id, name, outlet_id, token_prefix, last_seen_at, revoked_at, hard_locked_at")
       .eq("org_id", org.id)
       .order("created_at", { ascending: false }),
     supabase
@@ -35,7 +30,7 @@ export default async function TerminalsPage({ params }: PageProps<"/o/[org]/sett
     tokenPrefix: t.token_prefix,
     lastSeen: t.last_seen_at,
     revoked: t.revoked_at !== null,
-    lockedUntil: stillLocked(t.locked_until),
+    lockedAt: t.hard_locked_at,
     isThisDevice: t.id === thisDevice?.id,
   }));
   return (

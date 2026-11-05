@@ -4,6 +4,30 @@ Newest first. What shipped, and **how it was verified** (separate claims).
 
 ---
 
+## 2026-11-05 (b) — PIN-only till staff, Lock vs Clock out, hard lock (P26)
+
+- Migration 10 (live, SQL editor): `org_roles.allow_password` (Manager on,
+  Cashier off), terminals hard lock after 5 wrong PINs in a row, owner
+  reset targets, unlock by reset link / backoffice, `admin_user_logins`,
+  `admin_end_sessions`.
+- Staff: new staff = name + role + PIN (hidden address, random password);
+  roles get "Can sign in away from the till"; moving someone to a PIN-only
+  role (or unticking it) switches their password off and ends sessions;
+  "Switch off password" for staff from before P26. Reset password only for
+  password roles.
+- Terminal: no email on the PIN screen; name + role after PIN; header
+  **Clock out** (while on shift) + **Lock**; locked screen with "Email the
+  owner a reset link"; /auth/confirm recovery unlocks the owner's tills,
+  /account?reset=1 asks for a new password; backoffice "Locked tills" →
+  reset owner password & unlock.
+- Verified: SQL checks on throwaway Postgres (all ok); live script 23/23
+  (hidden-address staff, PIN session, countdown + lock, reset targets +
+  throttle, both unlocks, password switch-off kills the old session);
+  typecheck, lint, tests, build. **Not verified:** these screens in a
+  browser; the reset email (needs custom SMTP + template, operations.md).
+- Existing FOKAS/Kawa cashiers keep their passwords until the owner clicks
+  "Switch off password" (after the terminal + PINs work).
+
 ## 2026-11-05 — Terminals, PIN sign-in, time clock with photos (P25)
 
 - Migration 9 (`terminals`, `member_pins`, `time_entries`, private

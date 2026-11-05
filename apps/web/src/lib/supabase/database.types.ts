@@ -349,14 +349,14 @@ isOneToOne: false
                   ]
                 },"org_roles": {
                   Row: {
-                    "created_at": string,"id": string,"name": string,"org_id": string,"permissions": (string)[]
+                    "allow_password": boolean,"created_at": string,"id": string,"name": string,"org_id": string,"permissions": (string)[]
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"name": string,"org_id": string,"permissions"?: (string)[]
+                    "allow_password"?: boolean,"created_at"?: string,"id"?: string,"name": string,"org_id": string,"permissions"?: (string)[]
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"name"?: string,"org_id"?: string,"permissions"?: (string)[]
+                    "allow_password"?: boolean,"created_at"?: string,"id"?: string,"name"?: string,"org_id"?: string,"permissions"?: (string)[]
                   }
                   Relationships: [
                     {
@@ -695,14 +695,14 @@ isOneToOne: true
                   ]
                 },"terminals": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"failed_pins": number,"failed_since": string | null,"id": string,"last_seen_at": string | null,"locked_until": string | null,"name": string,"org_id": string,"outlet_id": string,"revoked_at": string | null,"token_hash": string,"token_prefix": string
+                    "created_at": string,"created_by": string | null,"failed_pins": number,"hard_locked_at": string | null,"id": string,"last_seen_at": string | null,"name": string,"org_id": string,"outlet_id": string,"reset_sent_at": string | null,"revoked_at": string | null,"token_hash": string,"token_prefix": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"failed_pins"?: number,"failed_since"?: string | null,"id"?: string,"last_seen_at"?: string | null,"locked_until"?: string | null,"name": string,"org_id": string,"outlet_id": string,"revoked_at"?: string | null,"token_hash": string,"token_prefix": string
+                    "created_at"?: string,"created_by"?: string | null,"failed_pins"?: number,"hard_locked_at"?: string | null,"id"?: string,"last_seen_at"?: string | null,"name": string,"org_id": string,"outlet_id": string,"reset_sent_at"?: string | null,"revoked_at"?: string | null,"token_hash": string,"token_prefix": string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"failed_pins"?: number,"failed_since"?: string | null,"id"?: string,"last_seen_at"?: string | null,"locked_until"?: string | null,"name"?: string,"org_id"?: string,"outlet_id"?: string,"revoked_at"?: string | null,"token_hash"?: string,"token_prefix"?: string
+                    "created_at"?: string,"created_by"?: string | null,"failed_pins"?: number,"hard_locked_at"?: string | null,"id"?: string,"last_seen_at"?: string | null,"name"?: string,"org_id"?: string,"outlet_id"?: string,"reset_sent_at"?: string | null,"revoked_at"?: string | null,"token_hash"?: string,"token_prefix"?: string
                   }
                   Relationships: [
                     {
@@ -809,6 +809,15 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"admin_end_sessions":
+{ Args: { "p_user": string }; Returns: undefined
+                           },
+"admin_unlock_org_terminals":
+{ Args: { "p_org": string }; Returns: number
+                           },
+"admin_unlock_owner_terminals":
+{ Args: { "p_user": string }; Returns: number
+                           },
 "admin_user_emails":
 { Args: { "p_ids": (string)[] }; Returns: {
               "email": string,"id": string
@@ -816,6 +825,11 @@ isOneToOne: false
                            },
 "admin_user_id_by_email":
 { Args: { "p_email": string }; Returns: string
+                           },
+"admin_user_logins":
+{ Args: { "p_ids": (string)[] }; Returns: {
+              "email": string,"id": string,"password_off": boolean
+            }[]
                            },
 "business_date":
 { Args: { "cutover_hour": number,"ts": string,"tz": string }; Returns: string
@@ -876,13 +890,13 @@ isOneToOne: false
               "created_at": string,
 "created_by": string | null,
 "failed_pins": number,
-"failed_since": string | null,
+"hard_locked_at": string | null,
 "id": string,
 "last_seen_at": string | null,
-"locked_until": string | null,
 "name": string,
 "org_id": string,
 "outlet_id": string,
+"reset_sent_at": string | null,
 "revoked_at": string | null,
 "token_hash": string,
 "token_prefix": string
@@ -1094,13 +1108,13 @@ isOneToOne: false
               "created_at": string,
 "created_by": string | null,
 "failed_pins": number,
-"failed_since": string | null,
+"hard_locked_at": string | null,
 "id": string,
 "last_seen_at": string | null,
-"locked_until": string | null,
 "name": string,
 "org_id": string,
 "outlet_id": string,
+"reset_sent_at": string | null,
 "revoked_at": string | null,
 "token_hash": string,
 "token_prefix": string
@@ -1113,11 +1127,16 @@ isOneToOne: false
       } },
 "terminal_info":
 { Args: { "p_token": string }; Returns: {
-              "idle_minutes": number,"lock_after_sale": boolean,"org_id": string,"outlet_id": string,"outlet_name": string,"slug": string,"terminal_id": string,"terminal_name": string,"token_prefix": string
+              "hard_locked": boolean,"idle_minutes": number,"lock_after_sale": boolean,"org_id": string,"outlet_id": string,"outlet_name": string,"slug": string,"terminal_id": string,"terminal_name": string,"token_prefix": string
             }[]
                            },
 "terminal_pin_sign_in":
 { Args: { "p_pin": string,"p_token": string }; Returns: Json
+                           },
+"terminal_reset_targets":
+{ Args: { "p_token": string }; Returns: {
+              "email": string
+            }[]
                            },
 "void_order":
 { Args: { "p_order": string,"p_reason": string }; Returns: {

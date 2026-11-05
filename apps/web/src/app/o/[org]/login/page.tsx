@@ -3,23 +3,26 @@ import { Suspense } from "react";
 import { LoginForm } from "@/components/login-form";
 import { findMembership, getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getTerminal } from "@/lib/terminal";
+import { getTerminal, personStatus } from "@/lib/terminal";
 import { tenantBase } from "@/lib/tenant";
 import { TerminalLogin } from "./pin-pad";
 
-async function TenantLogin({ params }: PageProps<"/o/[org]/login">) {
-  const { org } = await params;
+async function TenantLogin({ params, searchParams }: PageProps<"/o/[org]/login">) {
+  const [{ org }, sp] = await Promise.all([params, searchParams]);
   const supabase = await createClient();
   const { data } = await supabase.rpc("tenant_public_info", { p_slug: org });
   const tenant = data?.[0];
   if (!tenant) notFound();
   const base = await tenantBase(org);
 
-  // A registered terminal always shows the PIN pad (P25); email stays one
-  // tap away. Checked before the redirect below: a PIN sign-in re-renders
-  // this page signed in, and must stay on the clock in/out screen.
+  // A registered terminal always shows its own screen — PIN pad, never an
+  // email form (P26). Checked before the redirect below: a PIN sign-in
+  // re-renders this page signed in, and must stay on the clock screen.
   const terminal = await getTerminal(org);
   if (terminal) {
+    // Signed in already (e.g. Clock out in the header): their own screen.
+    const me = await getCurrentUser();
+    const current = me && !terminal.hardLocked && (await findMembership(org)) ? await personStatus(supabase, org, terminal.orgId, me.id) : null;
     return (
       <TerminalLogin
         slug={org}
@@ -27,7 +30,9 @@ async function TenantLogin({ params }: PageProps<"/o/[org]/login">) {
         terminalName={terminal.name}
         logoUrl={tenant.logo_url}
         logoOnDarkUrl={tenant.logo_on_dark_url}
-        fallback={base || "/"}
+        hardLocked={terminal.hardLocked}
+        current={current}
+        start={sp.clock === "out" ? "clock-out" : "welcome"}
       />
     );
   }

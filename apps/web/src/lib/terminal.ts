@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { tenantBase } from "@/lib/tenant";
 
 // Registered terminals (P25). A terminal is this browser, registered by a
 // manager for one branch: a random token in an httpOnly cookie (only its
@@ -26,6 +27,8 @@ export type Terminal = {
   tokenPrefix: string;
   idleMinutes: number;
   lockAfterSale: boolean;
+  /** 5 wrong PINs in a row: locked until an owner's password is reset (P26). */
+  hardLocked: boolean;
 };
 
 export async function terminalToken(): Promise<string | null> {
@@ -50,8 +53,50 @@ export const getTerminal = cache(async (slug: string): Promise<Terminal | null> 
     tokenPrefix: t.token_prefix,
     idleMinutes: t.idle_minutes,
     lockAfterSale: t.lock_after_sale,
+    hardLocked: t.hard_locked,
   };
 });
+
+export type Person = {
+  name: string;
+  /** "Owner", or the role's name. */
+  role: string;
+  clockedInAt: string | null;
+  missingOutOn: string | null;
+  home: string;
+};
+
+/**
+ * Name, role and shift status of the signed-in person, for the screen after
+ * a PIN (or Clock out from the header). Takes the client that signed them
+ * in, so it never depends on cookies written earlier in the same request.
+ */
+export async function personStatus(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  slug: string,
+  orgId: string,
+  userId: string
+): Promise<Person> {
+  const [{ data: status }, { data: m }, { data: profile }] = await Promise.all([
+    supabase.rpc("my_clock_status", { p_org: orgId }),
+    supabase
+      .from("org_members")
+      .select("role, org_role:org_roles!org_members_role_fk(name)")
+      .eq("org_id", orgId)
+      .eq("user_id", userId)
+      .maybeSingle(),
+    supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
+  ]);
+  const s = (status ?? {}) as { clocked_in_at?: string | null; missing_out_on?: string | null };
+  const base = await tenantBase(slug);
+  return {
+    name: profile?.full_name ?? "",
+    role: m?.role === "owner" ? "Owner" : (m?.org_role?.name ?? ""),
+    clockedInAt: s.clocked_in_at ?? null,
+    missingOutOn: s.missing_out_on ?? null,
+    home: base || "/",
+  };
+}
 
 /** Server Actions only (cookies are read-only while rendering). */
 export async function setTerminalCookie(token: string) {
