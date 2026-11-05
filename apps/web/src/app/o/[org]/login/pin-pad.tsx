@@ -278,12 +278,10 @@ function ClockCamera({
   useEffect(() => {
     let live: MediaStream | null = null;
     let cancelled = false;
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setFailed(true);
-      return;
-    }
-    navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "user", width: { ideal: 640 } }, audio: false })
+    const media = navigator.mediaDevices?.getUserMedia
+      ? navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 } }, audio: false })
+      : Promise.reject(new Error("no camera API"));
+    media
       .then((s) => {
         if (cancelled) return s.getTracks().forEach((t) => t.stop());
         live = s;

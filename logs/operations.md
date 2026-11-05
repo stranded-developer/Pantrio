@@ -13,6 +13,11 @@
   key could create a login (it would have no restaurant, but still).
 - URL Configuration → Site URL: the production URL. Redirect URLs: add
   `https://<prod>/auth/confirm` and each custom domain's `/auth/confirm`.
+- **Rate Limits → token verifications:** terminal PIN sign-in (P25) verifies
+  a magic-link token server-side, and every server call comes from Vercel's
+  few egress IPs, so all restaurants share this limit (password sign-in
+  already shares "sign-ins" the same way). Raise it if staff see "Too many
+  sign-ins right now".
 - Built-in email only reaches your own team's addresses. Nothing in Pantrio
   needs email today; set up custom SMTP (e.g. Resend) before adding
   "forgot password".
@@ -25,6 +30,7 @@
    for f in supabase/tests/auth_stub.sql supabase/migrations/*.sql; do
      docker exec -i pantrio-pgtest psql -q -v ON_ERROR_STOP=1 -U postgres < $f; done
    docker exec -i pantrio-pgtest psql -q -t -U postgres < supabase/tests/pos_checks.sql | grep -E "ok|FAIL|expect"
+   docker exec -i pantrio-pgtest psql -q -t -U postgres < supabase/tests/timeclock_checks.sql | grep -E "ok|FAIL|expect"
    docker rm -f pantrio-pgtest
    ```
    Every line must be `ok …` or an `(expect N): N` that matches; no `FAIL`.

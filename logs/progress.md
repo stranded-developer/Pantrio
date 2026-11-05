@@ -4,6 +4,24 @@ Newest first. What shipped, and **how it was verified** (separate claims).
 
 ---
 
+## 2026-11-05 — Terminals, PIN sign-in, time clock with photos (P25) — NOT LIVE YET
+
+- Migration 9 (`terminals`, `member_pins`, `time_entries`, private
+  `clock-photos` bucket, permission `timesheets.manage` added to Manager
+  roles; org_settings idle minutes / lock after sale).
+- Settings → Terminals: "Make this a terminal" (httpOnly cookie, 400 days),
+  list + revoke, auto-lock options. Settings → Staff: Set/Change PIN.
+- `/login` on a terminal = PIN pad → Clock in / Clock out (webcam photo, or
+  "no photo") / Open POS / Lock; welcome screens lock themselves (60 s,
+  5 s after clock-out). Signed-in terminal: header **Lock**, idle lock
+  (remembered across reloads/shutdown), optional lock after each sale.
+- `/timesheets`: week view, hours per person (missing clock-outs not
+  counted), photos, Fix/Edit with reason, add a missed shift.
+- Verified: SQL checks (timeclock_checks.sql all ok, pos_checks 35 ok
+  unchanged) on throwaway Postgres; typecheck, lint, tests, build.
+  **Not verified yet:** migration on the live DB, PIN → session minting
+  (generateLink/verifyOtp), photo upload, iPad camera — needs the live project.
+
 ## 2026-10-26 (d) — Roles & permissions, staff rename, receipt preview
 
 - Migration 8 (live): `org_roles`, `has_perm()`, every policy/function on

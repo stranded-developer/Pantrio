@@ -104,10 +104,10 @@ export default async function TimesheetsPage({ params, searchParams }: PageProps
 
       {totals.size > 0 && (
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {[...totals.values()]
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((t) => (
-              <li key={t.name} className="rounded-2xl bg-white p-4 shadow-sm">
+          {[...totals.entries()]
+            .sort(([, a], [, b]) => a.name.localeCompare(b.name))
+            .map(([userId, t]) => (
+              <li key={userId} className="rounded-2xl bg-white p-4 shadow-sm">
                 <p className="font-medium text-neutral-900">{t.name}</p>
                 <p className="text-2xl font-semibold text-neutral-900">{formatDuration(t.ms)}</p>
                 <p className="text-sm text-neutral-500">

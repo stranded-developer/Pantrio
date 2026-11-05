@@ -13,6 +13,7 @@ export type TerminalRow = {
   tokenPrefix: string;
   lastSeen: string | null;
   revoked: boolean;
+  /** Locked after wrong PINs, until this time. */
   lockedUntil: string | null;
   isThisDevice: boolean;
 };
@@ -114,7 +115,7 @@ export function TerminalManager({
                 {outlets.length > 1 && `${t.outlet} · `}
                 <code>{t.tokenPrefix}…</code> ·{" "}
                 {t.revoked ? "revoked" : t.lastSeen ? `last used ${when(t.lastSeen)}` : "not used yet"}
-                {!t.revoked && t.lockedUntil && Date.parse(t.lockedUntil) > Date.now() && (
+                {!t.revoked && t.lockedUntil && (
                   <span className="text-red-700"> · locked after wrong PINs until {when(t.lockedUntil)}</span>
                 )}
               </p>
