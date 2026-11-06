@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   calculateChange,
@@ -65,7 +66,19 @@ export function PosTerminal({ categories, items, rules }: Props) {
   // Restored during render, not in an effect. This component is never
   // server-rendered (see pos-client.tsx), so reading storage here is safe
   // and avoids a cascading re-render on every mount.
-  const [cart, setCart] = useState<CartLine[]>(() => readStoredCart(storageKey));
+  const router = useRouter();
+  const [storedCart, setCart] = useState<CartLine[]>(() => readStoredCart(storageKey));
+  // Prices always come from the menu as loaded now, never from when the line
+  // was added (or from a cart saved in the browser yesterday): a stale price
+  // made "Exact" short of what create_order charges. Items no longer on
+  // the menu drop out.
+  const cart = useMemo(() => {
+    const menu = new Map(items.map((item) => [item.id, item]));
+    return storedCart.flatMap((line) => {
+      const item = menu.get(line.menuItemId);
+      return item ? [{ ...line, name: item.name, unitPrice: item.price }] : [];
+    });
+  }, [storedCart, items]);
   const [activeCategory, setActiveCategory] = useState<string>(categories[0]?.id ?? "");
   const [stage, setStage] = useState<Stage>("ordering");
   const [tendered, setTendered] = useState("");
@@ -81,11 +94,11 @@ export function PosTerminal({ categories, items, rules }: Props) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify(cart));
+      localStorage.setItem(storageKey, JSON.stringify(storedCart));
     } catch {
       // Ignore quota / private-mode errors.
     }
-  }, [cart, storageKey]);
+  }, [storedCart, storageKey]);
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
@@ -161,7 +174,13 @@ export function PosTerminal({ categories, items, rules }: Props) {
     setPending(false);
 
     if (!result.ok) {
-      setError(result.error);
+      if (/less than the total/i.test(result.error)) {
+        // The database priced it higher than this screen: a price changed
+        // since it loaded. Reload the menu so the total shown is the real one.
+        router.refresh();
+        setTendered("");
+        setError("A price changed since this screen loaded. Check the new total and take the payment again.");
+      } else setError(result.error);
       return;
     }
 
