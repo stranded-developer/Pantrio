@@ -3,10 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
+  bestDiscount,
   calculateChange,
   calculateOrderTotals,
   formatRupiah,
   suggestedTenders,
+  type PosDiscount,
   type PosTaxRules,
 } from "@pantrio/core";
 import type { MenuCategory, MenuItem } from "@/lib/queries/pos";
@@ -15,6 +17,8 @@ import { useTenant } from "../tenant-context";
 import { reprintReceipt, submitCashOrder } from "./actions";
 
 type CartLine = { menuItemId: string; name: string; unitPrice: number; qty: number; note?: string };
+/** A cart line as shown: current price plus today's discount (P27). */
+type PricedLine = CartLine & { discount: number; discountName: string | null };
 
 /**
  * Idempotency key for a checkout (FOKAS D10). crypto.randomUUID only exists
@@ -48,6 +52,9 @@ type Props = {
   categories: MenuCategory[];
   items: MenuItem[];
   rules: PosTaxRules;
+  /** Discounts running today; create_order applies them again itself. */
+  discounts: PosDiscount[];
+  businessDay: string;
 };
 
 type Stage = "ordering" | "checkout" | "paid";
@@ -60,7 +67,7 @@ type PaidInfo = {
   priority: boolean;
 };
 
-export function PosTerminal({ categories, items, rules }: Props) {
+export function PosTerminal({ categories, items, rules, discounts, businessDay }: Props) {
   const { slug, outletId } = useTenant();
   const storageKey = cartKey(outletId);
   // Restored during render, not in an effect. This component is never
@@ -72,13 +79,25 @@ export function PosTerminal({ categories, items, rules }: Props) {
   // was added (or from a cart saved in the browser yesterday): a stale price
   // made "Exact" short of what create_order charges. Items no longer on
   // the menu drop out.
-  const cart = useMemo(() => {
+  const cart = useMemo<PricedLine[]>(() => {
     const menu = new Map(items.map((item) => [item.id, item]));
     return storedCart.flatMap((line) => {
       const item = menu.get(line.menuItemId);
-      return item ? [{ ...line, name: item.name, unitPrice: item.price }] : [];
+      if (!item) return [];
+      const best = bestDiscount(item.id, item.price, line.qty, discounts, businessDay);
+      return [
+        {
+          ...line,
+          name: item.name,
+          unitPrice: item.price,
+          discount: best?.amount ?? 0,
+          discountName: best?.discount.name ?? null,
+        },
+      ];
     });
-  }, [storedCart, items]);
+  }, [storedCart, items, discounts, businessDay]);
+  /** Price of one unit after today's best discount, for the item tiles. */
+  const unitAfterDiscount = (item: MenuItem) => item.price - (bestDiscount(item.id, item.price, 1, discounts, businessDay)?.amount ?? 0);
   const [activeCategory, setActiveCategory] = useState<string>(categories[0]?.id ?? "");
   const [stage, setStage] = useState<Stage>("ordering");
   const [tendered, setTendered] = useState("");
@@ -225,9 +244,14 @@ export function PosTerminal({ categories, items, rules }: Props) {
               className="flex min-h-24 flex-col justify-between rounded-xl border border-neutral-200 bg-white p-4 text-left transition active:scale-95 active:bg-neutral-100"
             >
               <span className="font-medium leading-tight text-neutral-900">{item.name}</span>
-              <span className="mt-2 text-sm text-neutral-500">
-                {formatRupiah(item.price)}
-              </span>
+              {unitAfterDiscount(item) < item.price ? (
+                <span className="mt-2 text-sm">
+                  <span className="text-neutral-400 line-through">{formatRupiah(item.price)}</span>{" "}
+                  <span className="font-medium text-green-700">{formatRupiah(unitAfterDiscount(item))}</span>
+                </span>
+              ) : (
+                <span className="mt-2 text-sm text-neutral-500">{formatRupiah(item.price)}</span>
+              )}
             </button>
           ))}
 
@@ -285,6 +309,12 @@ export function PosTerminal({ categories, items, rules }: Props) {
                       {formatRupiah(line.unitPrice * line.qty)}
                     </span>
                   </div>
+                  {line.discount > 0 && (
+                    <div className="mt-1 flex justify-between text-sm text-green-700">
+                      <span>{line.discountName}</span>
+                      <span>−{formatRupiah(line.discount)}</span>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -295,12 +325,14 @@ export function PosTerminal({ categories, items, rules }: Props) {
           <div className="space-y-1 text-sm">
             {inclusive ? (
               <>
+                {totals.discountTotal > 0 && <Row label="Discount" value={-totals.discountTotal} />}
                 {/* Prices already include service and PB1; show what's inside. */}
                 {totals.serviceTotal > 0 && <Row label="incl. service" value={totals.serviceTotal} />}
                 {totals.taxTotal > 0 && <Row label="incl. tax" value={totals.taxTotal} />}
               </>
             ) : (
               <>
+                {totals.discountTotal > 0 && <Row label="Discount" value={-totals.discountTotal} />}
                 <Row label="Subtotal" value={totals.subtotal} />
                 {/* Hidden entirely at 0% — a row reading "Tax: Rp 0" just adds noise. */}
                 {totals.serviceTotal > 0 && <Row label="Service" value={totals.serviceTotal} />}
@@ -375,7 +407,7 @@ function Row({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex justify-between text-neutral-600">
       <span>{label}</span>
-      <span>{formatRupiah(value)}</span>
+      <span>{value < 0 ? `−${formatRupiah(-value)}` : formatRupiah(value)}</span>
     </div>
   );
 }

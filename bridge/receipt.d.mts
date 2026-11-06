@@ -19,6 +19,9 @@ export type ReceiptData = {
     qty: number;
     unit_price: number;
     line_subtotal: number;
+    /** Rupiah off this line (P27); line_subtotal is after it. */
+    line_discount?: number;
+    discount_name?: string | null;
     voided: boolean;
     modifiers_json: unknown;
   }[];

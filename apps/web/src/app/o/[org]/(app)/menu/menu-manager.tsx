@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatBps, formatRupiah, Q } from "@pantrio/core";
 import type { MenuCategory, MenuItem } from "@/lib/queries/pos";
@@ -22,7 +23,7 @@ function costLabel(item: MenuItem): string | null {
 
 export function MenuManager({ categories, items, priceMode }: Props) {
   const router = useRouter();
-  const { slug } = useTenant();
+  const { slug, base } = useTenant();
   const [editing, setEditing] = useState<MenuItem | "new" | null>(null);
   const [addingCategory, setAddingCategory] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +49,12 @@ export function MenuManager({ categories, items, priceMode }: Props) {
           </p>
         </div>
         <div className="flex gap-2">
+          <Link
+            href={`${base}/menu/discounts`}
+            className="rounded-xl border border-green-600 px-4 py-3 font-medium text-green-700"
+          >
+            Discounts
+          </Link>
           <button
             onClick={() => setAddingCategory(true)}
             className="rounded-xl border border-neutral-300 px-4 py-3 font-medium text-neutral-700"

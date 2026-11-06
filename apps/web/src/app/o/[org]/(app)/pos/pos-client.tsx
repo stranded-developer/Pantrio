@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { PosTaxRules } from "@pantrio/core";
+import type { PosDiscount, PosTaxRules } from "@pantrio/core";
 import type { MenuCategory, MenuItem } from "@/lib/queries/pos";
 
 // The terminal restores an in-progress cart from localStorage during render;
@@ -13,6 +13,12 @@ const PosTerminal = dynamic(() => import("./pos-terminal").then((mod) => mod.Pos
   ),
 });
 
-export function PosClient(props: { categories: MenuCategory[]; items: MenuItem[]; rules: PosTaxRules }) {
+export function PosClient(props: {
+  categories: MenuCategory[];
+  items: MenuItem[];
+  rules: PosTaxRules;
+  discounts: PosDiscount[];
+  businessDay: string;
+}) {
   return <PosTerminal {...props} />;
 }

@@ -84,9 +84,15 @@ function layout(data, { width, reprint, logo }) {
   const itemLines = [];
   for (const item of items.filter((line) => !line.voided)) {
     itemLines.push(...wrap(item.name_snapshot, width));
+    // line_subtotal is after discount (P27); the line shows the menu price
+    // and the discount under it, so the lines add up to the Subtotal.
+    const discount = item.line_discount ?? 0;
     itemLines.push(
-      columns(`  ${item.qty} x ${money(item.unit_price)}`, money(item.line_subtotal), width)
+      columns(`  ${item.qty} x ${money(item.unit_price)}`, money(item.line_subtotal + discount), width)
     );
+    if (discount > 0) {
+      itemLines.push(columns(`  ${item.discount_name || "Diskon"}`.slice(0, width - 10), `-${money(discount)}`, width));
+    }
     for (const note of notesOf(item)) {
       itemLines.push(...wrap(`- ${note}`, width - 2).map((text) => `  ${text}`));
     }

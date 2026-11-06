@@ -4,6 +4,28 @@ Newest first. What shipped, and **how it was verified** (separate claims).
 
 ---
 
+## 2026-11-06 — "Exact" payment fix; menu discounts (P27)
+
+- Fix (cb5f67d): cart lines kept the price from when they were added (and
+  from the cart saved in the browser), so after a price change "Exact" was
+  below what create_order charged. Lines are priced from the current menu;
+  a short-tender refusal reloads the menu. Verified till ≡ SQL tax maths on
+  5,000 totals with FOKAS rules.
+- Discounts (migration 11): `discounts` + `discount_items`, `best_discount()`,
+  `save_discount()`; create_order applies the largest discount per line on
+  the business day, service/PB1 after discount; order lines snapshot
+  line_discount + discount_name, line_subtotal after discount; receipt data
+  and the bridge print the discount under the line.
+- Menu → Discounts: % or Rp off each, All menu items or ticked items (per
+  category), from/until dates, weekdays, on/off; status Running today /
+  Scheduled / Not today / Ended / Off. POS tiles show the discounted price,
+  cart lines and totals show the discount; order page shows it.
+- Verified: discount_checks.sql all ok (same fixtures as pos.test.ts),
+  pos_checks 35 + timeclock 32 unchanged, core 38 tests, bridge 17 tests,
+  typecheck, lint, build. **Not verified:** in a browser; printed paper —
+  STB bridges need the new bridge/receipt.mjs (older bridges print the line
+  after discount without the discount row; totals stay right).
+
 ## 2026-11-05 (b) — PIN-only till staff, Lock vs Clock out, hard lock (P26)
 
 - Migration 10 (live, SQL editor): `org_roles.allow_password` (Manager on,

@@ -25,6 +25,52 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"discount_items": {
+                  Row: {
+                    "discount_id": string,"menu_item_id": string,"org_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "discount_id": string,"menu_item_id": string,"org_id": string
+                  }
+                  Update: {
+                    "discount_id"?: string,"menu_item_id"?: string,"org_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "discount_items_discount_id_org_id_fkey"
+      columns: ["discount_id","org_id"]
+isOneToOne: false
+      referencedRelation: "discounts"
+      referencedColumns: ["id","org_id"]
+    },{
+      foreignKeyName: "discount_items_menu_item_id_org_id_fkey"
+      columns: ["menu_item_id","org_id"]
+isOneToOne: false
+      referencedRelation: "menu_items"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
+                },"discounts": {
+                  Row: {
+                    "active": boolean,"all_items": boolean,"created_at": string,"created_by": string | null,"ends_on": string | null,"id": string,"kind": Database["public"]['Enums']["discount_kind"],"name": string,"org_id": string,"starts_on": string,"value": number,"weekdays": (number)[] | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active"?: boolean,"all_items"?: boolean,"created_at"?: string,"created_by"?: string | null,"ends_on"?: string | null,"id"?: string,"kind": Database["public"]['Enums']["discount_kind"],"name": string,"org_id": string,"starts_on": string,"value": number,"weekdays"?: (number)[] | null
+                  }
+                  Update: {
+                    "active"?: boolean,"all_items"?: boolean,"created_at"?: string,"created_by"?: string | null,"ends_on"?: string | null,"id"?: string,"kind"?: Database["public"]['Enums']["discount_kind"],"name"?: string,"org_id"?: string,"starts_on"?: string,"value"?: number,"weekdays"?: (number)[] | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "discounts_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"external_menu_items": {
                   Row: {
                     "active": boolean,"category": string | null,"connection_id": string,"external_id": string,"id": string,"name": string,"org_id": string,"recipe_id": string | null,"selling_price": number,"updated_at": string
@@ -251,14 +297,14 @@ isOneToOne: false
                   ]
                 },"order_items": {
                   Row: {
-                    "id": string,"line_subtotal": number,"menu_item_id": string | null,"modifiers_json": NonNullable<Json>,"name_snapshot": string,"order_id": string,"org_id": string,"qty": number,"unit_cost": number | null,"unit_price": number,"void_reason": string | null,"voided": boolean
+                    "discount_id": string | null,"discount_name": string | null,"id": string,"line_discount": number,"line_subtotal": number,"menu_item_id": string | null,"modifiers_json": NonNullable<Json>,"name_snapshot": string,"order_id": string,"org_id": string,"qty": number,"unit_cost": number | null,"unit_price": number,"void_reason": string | null,"voided": boolean
                   }
                   ComputedFields: never
                   Insert: {
-                    "id"?: string,"line_subtotal": number,"menu_item_id"?: string | null,"modifiers_json"?: NonNullable<Json>,"name_snapshot": string,"order_id": string,"org_id": string,"qty": number,"unit_cost"?: number | null,"unit_price": number,"void_reason"?: string | null,"voided"?: boolean
+                    "discount_id"?: string | null,"discount_name"?: string | null,"id"?: string,"line_discount"?: number,"line_subtotal": number,"menu_item_id"?: string | null,"modifiers_json"?: NonNullable<Json>,"name_snapshot": string,"order_id": string,"org_id": string,"qty": number,"unit_cost"?: number | null,"unit_price": number,"void_reason"?: string | null,"voided"?: boolean
                   }
                   Update: {
-                    "id"?: string,"line_subtotal"?: number,"menu_item_id"?: string | null,"modifiers_json"?: NonNullable<Json>,"name_snapshot"?: string,"order_id"?: string,"org_id"?: string,"qty"?: number,"unit_cost"?: number | null,"unit_price"?: number,"void_reason"?: string | null,"voided"?: boolean
+                    "discount_id"?: string | null,"discount_name"?: string | null,"id"?: string,"line_discount"?: number,"line_subtotal"?: number,"menu_item_id"?: string | null,"modifiers_json"?: NonNullable<Json>,"name_snapshot"?: string,"order_id"?: string,"org_id"?: string,"qty"?: number,"unit_cost"?: number | null,"unit_price"?: number,"void_reason"?: string | null,"voided"?: boolean
                   }
                   Relationships: [
                     {
@@ -831,6 +877,11 @@ isOneToOne: false
               "email": string,"id": string,"password_off": boolean
             }[]
                            },
+"best_discount":
+{ Args: { "p_day": string,"p_item": string,"p_org": string,"p_price": number,"p_qty": number }; Returns: {
+              "amount": number,"id": string,"name": string
+            }[]
+                           },
 "business_date":
 { Args: { "cutover_hour": number,"ts": string,"tz": string }; Returns: string
                            },
@@ -1080,6 +1131,9 @@ isOneToOne: false
 "sales_summary":
 { Args: { "p_from": string,"p_org": string,"p_outlet"?: string,"p_to": string }; Returns: Json
                            },
+"save_discount":
+{ Args: { "p_active": boolean,"p_all_items": boolean,"p_ends": string,"p_id": string,"p_items": (string)[],"p_kind": Database["public"]['Enums']["discount_kind"],"p_name": string,"p_org": string,"p_starts": string,"p_value": number,"p_weekdays": (number)[] }; Returns: string
+                           },
 "save_recipe":
 { Args: { "p_lines": Json,"p_name": string,"p_recipe": string,"p_yield_qty": number,"p_yield_unit": Database["public"]['Enums']["unit_code"] }; Returns: undefined
                            },
@@ -1176,7 +1230,7 @@ isOneToOne: false
       } }
           }
           Enums: {
-            "cost_period": "monthly"|"yearly","fixed_cost_category": "rent"|"electricity"|"water"|"gas"|"internet"|"other","income_tax_mode": "pph_final_umkm"|"custom"|"none","order_status": "open"|"awaiting_payment"|"paid"|"voided"|"refunded","org_role": "owner"|"manager"|"cashier","payment_method": "cash"|"qris"|"va"|"card","payment_provider": "cash"|"midtrans"|"edc","payment_status": "pending"|"paid"|"expired"|"failed"|"refunded","price_mode": "exclusive"|"inclusive","print_kind": "receipt"|"reprint"|"kitchen","print_status": "queued"|"claimed"|"printed"|"failed","recipe_kind": "menu_item"|"prep","time_entry_status": "open"|"closed"|"missing_out","unit_code": "mg"|"g"|"ons"|"kg"|"ml"|"l"|"pcs"|"lusin"
+            "cost_period": "monthly"|"yearly","discount_kind": "percent"|"amount","fixed_cost_category": "rent"|"electricity"|"water"|"gas"|"internet"|"other","income_tax_mode": "pph_final_umkm"|"custom"|"none","order_status": "open"|"awaiting_payment"|"paid"|"voided"|"refunded","org_role": "owner"|"manager"|"cashier","payment_method": "cash"|"qris"|"va"|"card","payment_provider": "cash"|"midtrans"|"edc","payment_status": "pending"|"paid"|"expired"|"failed"|"refunded","price_mode": "exclusive"|"inclusive","print_kind": "receipt"|"reprint"|"kitchen","print_status": "queued"|"claimed"|"printed"|"failed","recipe_kind": "menu_item"|"prep","time_entry_status": "open"|"closed"|"missing_out","unit_code": "mg"|"g"|"ons"|"kg"|"ml"|"l"|"pcs"|"lusin"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1292,7 +1346,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "cost_period": ["monthly", "yearly"],"fixed_cost_category": ["rent", "electricity", "water", "gas", "internet", "other"],"income_tax_mode": ["pph_final_umkm", "custom", "none"],"order_status": ["open", "awaiting_payment", "paid", "voided", "refunded"],"org_role": ["owner", "manager", "cashier"],"payment_method": ["cash", "qris", "va", "card"],"payment_provider": ["cash", "midtrans", "edc"],"payment_status": ["pending", "paid", "expired", "failed", "refunded"],"price_mode": ["exclusive", "inclusive"],"print_kind": ["receipt", "reprint", "kitchen"],"print_status": ["queued", "claimed", "printed", "failed"],"recipe_kind": ["menu_item", "prep"],"time_entry_status": ["open", "closed", "missing_out"],"unit_code": ["mg", "g", "ons", "kg", "ml", "l", "pcs", "lusin"]
+            "cost_period": ["monthly", "yearly"],"discount_kind": ["percent", "amount"],"fixed_cost_category": ["rent", "electricity", "water", "gas", "internet", "other"],"income_tax_mode": ["pph_final_umkm", "custom", "none"],"order_status": ["open", "awaiting_payment", "paid", "voided", "refunded"],"org_role": ["owner", "manager", "cashier"],"payment_method": ["cash", "qris", "va", "card"],"payment_provider": ["cash", "midtrans", "edc"],"payment_status": ["pending", "paid", "expired", "failed", "refunded"],"price_mode": ["exclusive", "inclusive"],"print_kind": ["receipt", "reprint", "kitchen"],"print_status": ["queued", "claimed", "printed", "failed"],"recipe_kind": ["menu_item", "prep"],"time_entry_status": ["open", "closed", "missing_out"],"unit_code": ["mg", "g", "ons", "kg", "ml", "l", "pcs", "lusin"]
           }
         }
 } as const

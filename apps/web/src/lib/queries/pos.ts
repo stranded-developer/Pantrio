@@ -75,14 +75,14 @@ export async function getOrderDetail(orgId: string, orderId: string) {
     supabase
       .from("orders")
       .select(
-        "id, order_no, queue_no, status, subtotal, service_total, tax_total, grand_total, cost_total, price_mode, opened_at, opened_by, business_date, void_reason, voided_at"
+        "id, order_no, queue_no, status, subtotal, discount_total, service_total, tax_total, grand_total, cost_total, price_mode, opened_at, opened_by, business_date, void_reason, voided_at"
       )
       .eq("org_id", orgId)
       .eq("id", orderId)
       .maybeSingle(),
     supabase
       .from("order_items")
-      .select("id, name_snapshot, qty, unit_price, line_subtotal, unit_cost, voided, modifiers_json")
+      .select("id, name_snapshot, qty, unit_price, line_subtotal, line_discount, discount_name, unit_cost, voided, modifiers_json")
       .eq("org_id", orgId)
       .eq("order_id", orderId),
     supabase

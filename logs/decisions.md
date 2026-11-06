@@ -232,3 +232,20 @@ User, after testing P25: less confusing, and security should rest on the PIN
   "if they can login they know password already"); a timed pause.
   Needs custom SMTP for the email route (built-in mail only reaches the
   Supabase team); the backoffice route works without it.
+
+### P27 — Menu discounts: % or Rp off, chosen items or all, automatic in their window (2026-11-06)
+User: discount days with checkboxes per menu item (or all). Decided:
+- A discount is **percent** (bps) or a **fixed rupiah amount off each
+  unit**, on chosen menu items or **all items**, from a start date to an
+  optional end date, optionally only on chosen weekdays.
+- **Automatic**: create_order applies it on the order's business day; the
+  cashier can't add or skip one. The till shows the discounted prices.
+- Overlapping discounts don't stack: each line gets the **largest** one.
+- Rounded once per line (half away from zero); a fixed amount never takes a
+  line below 0. Service and PB1 are on the price **after** discount
+  (usual Indonesian treatment; confirmed by the user).
+- Each line snapshots `unit_price` (menu price), `line_discount` and the
+  discount; `line_subtotal` is after discount, so Sales and margins use the
+  money actually charged; ingredient cost is unchanged.
+- Managed by roles with Menu permission (menu.manage).
+- pos.ts mirrors create_order (lineDiscount / bestDiscount).

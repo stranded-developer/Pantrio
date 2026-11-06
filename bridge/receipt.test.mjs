@@ -109,3 +109,18 @@ test("prints the time in the restaurant's timezone", () => {
   const wita = { ...sample, settings: { ...sample.settings, timezone: "Asia/Makassar" } };
   assert.match(renderText(wita, { width: 32 }), /18\/10\/2026 20:03/);
 });
+
+test("a discounted line shows the menu price, then the discount (P27)", () => {
+  const discounted = {
+    ...sample,
+    order: { ...sample.order, subtotal: 50000, discount_total: 11000 },
+    items: [
+      { name_snapshot: "Latte", qty: 2, unit_price: 28000, line_subtotal: 45000, line_discount: 11000, discount_name: "Coffee Tuesday", voided: false, modifiers_json: [] },
+      { name_snapshot: "Mineral Water", qty: 1, unit_price: 5000, line_subtotal: 5000, voided: false, modifiers_json: [] },
+    ],
+  };
+  const text = renderText(discounted, { width: 32 });
+  assert.match(text, /2 x 28\.000\s+56\.000/);
+  assert.match(text, /Coffee Tuesday\s+-11\.000/);
+  assert.match(text, /Subtotal\s+50\.000/);
+});

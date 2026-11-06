@@ -1,8 +1,9 @@
 import Link from "next/link";
-import type { PosTaxRules } from "@pantrio/core";
+import { discountAppliesOn, type PosTaxRules } from "@pantrio/core";
 import { can, requirePermPage } from "@/lib/auth";
+import { getDiscounts } from "@/lib/queries/discounts";
 import { getPosMenu } from "@/lib/queries/pos";
-import { getTaxSettings, tenantBase } from "@/lib/tenant";
+import { businessDateToday, getTaxSettings, tenantBase } from "@/lib/tenant";
 import { PosClient } from "./pos-client";
 
 export default async function PosPage({ params }: PageProps<"/o/[org]/pos">) {
@@ -10,7 +11,12 @@ export default async function PosPage({ params }: PageProps<"/o/[org]/pos">) {
   const base = await tenantBase(slug);
   const m = await requirePermPage(slug, base, "pos.sell");
   const { org } = m;
-  const [{ categories, items }, tax] = await Promise.all([getPosMenu(org.id), getTaxSettings(org.id)]);
+  const [{ categories, items }, tax, discounts, today] = await Promise.all([
+    getPosMenu(org.id),
+    getTaxSettings(org.id),
+    getDiscounts(org.id),
+    businessDateToday(org.id),
+  ]);
 
   if (categories.length === 0) {
     return (
@@ -33,5 +39,14 @@ export default async function PosPage({ params }: PageProps<"/o/[org]/pos">) {
     pb1Bps: tax.pb1_bps,
     pb1OnService: tax.pb1_on_service,
   };
-  return <PosClient categories={categories} items={items} rules={rules} />;
+  // Only today's discounts; create_order decides again at the moment of sale.
+  return (
+    <PosClient
+      categories={categories}
+      items={items}
+      rules={rules}
+      discounts={discounts.filter((d) => discountAppliesOn(d, today))}
+      businessDay={today}
+    />
+  );
 }

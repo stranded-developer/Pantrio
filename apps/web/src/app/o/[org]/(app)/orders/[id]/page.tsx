@@ -67,6 +67,11 @@ export default async function OrderDetailPage({ params }: PageProps<"/o/[org]/or
                 <span className="ml-2 text-neutral-500">×{item.qty}</span>
                 <p className="text-xs text-neutral-400">{formatRupiah(item.unit_price)} each</p>
                 {noteOf(item.modifiers_json) && <p className="text-xs text-amber-700">↳ {noteOf(item.modifiers_json)}</p>}
+                {item.line_discount > 0 && (
+                  <p className="text-xs text-green-700">
+                    {item.discount_name ?? "Discount"} −{formatRupiah(item.line_discount)}
+                  </p>
+                )}
               </div>
               <span className="tabular-nums text-neutral-700">{formatRupiah(item.line_subtotal)}</span>
             </li>
@@ -74,6 +79,12 @@ export default async function OrderDetailPage({ params }: PageProps<"/o/[org]/or
         </ul>
 
         <dl className="space-y-1 text-sm">
+          {order.discount_total > 0 && (
+            <div className="flex justify-between text-green-700">
+              <dt>Discount</dt>
+              <dd className="tabular-nums">−{formatRupiah(order.discount_total)}</dd>
+            </div>
+          )}
           <Row label={inclusive ? "Before tax" : "Subtotal"} value={order.subtotal} />
           {order.service_total > 0 && <Row label={inclusive ? "incl. service" : "Service"} value={order.service_total} />}
           {order.tax_total > 0 && <Row label={inclusive ? "incl. tax" : "Tax"} value={order.tax_total} />}

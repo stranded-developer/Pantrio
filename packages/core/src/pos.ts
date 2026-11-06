@@ -14,12 +14,15 @@ export type PosTaxRules = {
   pb1OnService: boolean;
 };
 
-export type PosLine = { unitPrice: number; qty: number };
+/** `discount`: rupiah off this line (from bestDiscount), 0 when none. */
+export type PosLine = { unitPrice: number; qty: number; discount?: number };
 
 export type OrderTotals = {
-  /** Σ unit price × qty, as printed on the lines. */
+  /** Σ unit price × qty, as printed on the lines (before discount). */
   linesTotal: number;
-  /** Pre-service, pre-PB1 base (DPP). Equals linesTotal when exclusive. */
+  /** Σ line discounts (P27). Service and PB1 are on linesTotal − this. */
+  discountTotal: number;
+  /** Pre-service, pre-PB1 base (DPP), after discount. */
   subtotal: number;
   serviceTotal: number;
   taxTotal: number;
@@ -28,24 +31,75 @@ export type OrderTotals = {
 
 export function calculateOrderTotals(lines: readonly PosLine[], r: PosTaxRules): OrderTotals {
   const linesTotal = lines.reduce((sum, l) => sum + l.unitPrice * l.qty, 0);
+  const discountTotal = lines.reduce((sum, l) => sum + (l.discount ?? 0), 0);
+  const net = linesTotal - discountTotal;
   const s = Q.bps(r.serviceBps);
   const t = Q.bps(r.pb1Bps);
 
   if (r.priceMode === "exclusive") {
     // Rounding on aggregates, not per line (FOKAS D13).
-    const subtotal = linesTotal;
+    const subtotal = net;
     const serviceTotal = Q.of(subtotal).mul(s).round();
     const taxTotal = Q.of(subtotal + (r.pb1OnService ? serviceTotal : 0)).mul(t).round();
-    return { linesTotal, subtotal, serviceTotal, taxTotal, grandTotal: subtotal + serviceTotal + taxTotal };
+    return { linesTotal, discountTotal, subtotal, serviceTotal, taxTotal, grandTotal: subtotal + serviceTotal + taxTotal };
   }
 
   // Inclusive: back the base out; PB1 takes the rounding remainder so the
   // parts always sum to exactly what the customer was charged.
-  const grandTotal = linesTotal;
+  const grandTotal = net;
   const factor = Q.ONE.add(s).add(t.mul(r.pb1OnService ? Q.ONE.add(s) : Q.ONE));
   const subtotal = Q.of(grandTotal).div(factor).round();
   const serviceTotal = Q.of(subtotal).mul(s).round();
-  return { linesTotal, subtotal, serviceTotal, taxTotal: grandTotal - subtotal - serviceTotal, grandTotal };
+  return { linesTotal, discountTotal, subtotal, serviceTotal, taxTotal: grandTotal - subtotal - serviceTotal, grandTotal };
+}
+
+// ── Discounts (P27), mirroring best_discount() in migration 11 ──────────
+
+export type PosDiscount = {
+  id: string;
+  name: string;
+  kind: "percent" | "amount";
+  /** percent: basis points (2000 = 20%); amount: rupiah off each unit. */
+  value: number;
+  allItems: boolean;
+  menuItemIds: readonly string[];
+  /** YYYY-MM-DD, inclusive. */
+  startsOn: string;
+  endsOn: string | null;
+  /** ISO weekdays, 1 = Monday … 7 = Sunday; null = every day. */
+  weekdays: readonly number[] | null;
+  active: boolean;
+};
+
+/** Does the discount run on this business day? */
+export function discountAppliesOn(d: PosDiscount, businessDay: string): boolean {
+  if (!d.active || d.startsOn > businessDay || (d.endsOn !== null && d.endsOn < businessDay)) return false;
+  if (d.weekdays === null) return true;
+  const dow = new Date(`${businessDay}T00:00:00Z`).getUTCDay();
+  return d.weekdays.includes(dow === 0 ? 7 : dow);
+}
+
+/** Rupiah off one line: % rounded once per line; a fixed amount never below 0. */
+export function lineDiscount(unitPrice: number, qty: number, d: Pick<PosDiscount, "kind" | "value">): number {
+  if (d.kind === "percent") return Q.of(unitPrice * qty).mul(Q.bps(d.value)).round();
+  return Math.min(d.value, unitPrice) * qty;
+}
+
+/** The largest discount for a line on a business day — they never stack. Ties: lowest id. */
+export function bestDiscount(
+  menuItemId: string,
+  unitPrice: number,
+  qty: number,
+  discounts: readonly PosDiscount[],
+  businessDay: string
+): { discount: PosDiscount; amount: number } | null {
+  let best: { discount: PosDiscount; amount: number } | null = null;
+  for (const d of discounts) {
+    if (!discountAppliesOn(d, businessDay) || !(d.allItems || d.menuItemIds.includes(menuItemId))) continue;
+    const amount = lineDiscount(unitPrice, qty, d);
+    if (!best || amount > best.amount || (amount === best.amount && d.id < best.discount.id)) best = { discount: d, amount };
+  }
+  return best && best.amount > 0 ? best : null;
 }
 
 /** Change owed. Negative means the customer still owes money. */
