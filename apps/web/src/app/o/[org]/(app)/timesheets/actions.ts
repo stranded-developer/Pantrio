@@ -61,3 +61,15 @@ export async function addEntry(slug: string, formData: FormData): Promise<Result
   revalidatePath(`/o/${slug}/timesheets`);
   return { ok: true };
 }
+
+/** Remove a mistaken entry (P28). SQL keeps the whole row in the audit log. */
+export async function deleteEntry(slug: string, entryId: string, reason: string): Promise<Result> {
+  await requireMembership(slug, "timesheets.manage");
+  const note = z.string().trim().min(1, "Give a reason.").max(300).safeParse(reason);
+  if (!note.success) return { ok: false, error: note.error.issues[0]!.message };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_time_entry", { p_entry: entryId, p_note: note.data });
+  if (error) return { ok: false, error: clean(error.message) };
+  revalidatePath(`/o/${slug}/timesheets`);
+  return { ok: true };
+}

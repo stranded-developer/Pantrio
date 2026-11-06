@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { formatDay } from "@pantrio/core";
 import { useTenant } from "../tenant-context";
-import { addEntry, editEntry, type Result } from "./actions";
+import { addEntry, deleteEntry, editEntry, type Result } from "./actions";
 import { formatDuration, isoToZonedLocal } from "./time";
 
 export type EntryRow = {
@@ -191,6 +191,20 @@ export function TimesheetView({
                           {pending ? "Saving…" : "Save"}
                         </button>
                       </div>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={(e) => {
+                          // Same reason box as Save; the whole entry stays in the audit log.
+                          const reason = new FormData(e.currentTarget.form!).get("note")?.toString() ?? "";
+                          if (!reason.trim()) return setError("Give a reason for deleting it.");
+                          if (!confirm(`Delete ${r.name}'s shift? It stays in the audit log.`)) return;
+                          run(deleteEntry(slug, r.id, reason), () => setEditing(null));
+                        }}
+                        className="text-left text-sm text-red-600 underline disabled:opacity-40 sm:col-span-2"
+                      >
+                        Delete this entry
+                      </button>
                     </form>
                   )}
                 </li>

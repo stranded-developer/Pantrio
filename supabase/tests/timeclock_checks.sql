@@ -175,3 +175,21 @@ reset role; reset role; set role service_role;
 select case when r->>'reason' = 'terminal' then 'ok revoked terminal refused' else 'FAIL ' || r::text end
   from terminal_pin_sign_in(:'tok', '1234') r;
 reset role;
+
+-- delete_time_entry (P28): timesheet managers, a reason, not their own, audited
+set role authenticated; select set_config('request.jwt.claim.sub', :M, false);
+select id as gone from add_time_entry(:'org_t', :'outlet_t', :K, now() - interval '80 hours', now() - interval '79 hours', 'test punch') \gset
+select set_config('request.jwt.claim.sub', :O, false);
+select id as mine from add_time_entry(:'org_t', :'outlet_t', :M, now() - interval '90 hours', now() - interval '89 hours', 'owner adds') \gset
+select set_config('request.jwt.claim.sub', :M, false);
+select delete_time_entry(:'mine', 'my own');                              -- own hours refused
+select delete_time_entry(:'gone', '');                                   -- reason required
+select set_config('request.jwt.claim.sub', :K, false);
+select delete_time_entry(:'gone', 'cashier tries');                       -- not found for a cashier
+select set_config('request.jwt.claim.sub', :M, false);
+select delete_time_entry(:'gone', 'duplicate punch');
+select 'ok entry deleted' where not exists (select 1 from time_entries where id = :'gone');
+reset role;
+select 'ok delete audited with the row and reason' where exists (
+  select 1 from audit_log where action = 'delete_time_entry' and entity_id = :'gone'
+     and before->>'note' = 'test punch' and after->>'reason' = 'duplicate punch');

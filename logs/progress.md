@@ -4,6 +4,16 @@ Newest first. What shipped, and **how it was verified** (separate claims).
 
 ---
 
+## 2026-11-06 (b) — Delete empty categories; delete time entries (P28)
+
+- Menu: "Delete category" on empty categories (FK refuses one with items,
+  friendly message). Timesheets: "Delete this entry" in the edit form,
+  needs the reason; migration 12 `delete_time_entry`, audited.
+- Verified: timeclock_checks.sql (delete: reason required, cashier refused,
+  own hours refused, deleted, audited with row + reason), pos/discount
+  checks unchanged, typecheck, lint. **Not verified:** in a browser.
+- Proposed, not built: table service — docs/table-service.md (P29 draft).
+
 ## 2026-11-06 — "Exact" payment fix; menu discounts (P27)
 
 - Fix (cb5f67d): cart lines kept the price from when they were added (and

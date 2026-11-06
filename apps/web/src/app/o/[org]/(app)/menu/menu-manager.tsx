@@ -7,6 +7,7 @@ import { formatBps, formatRupiah, Q } from "@pantrio/core";
 import type { MenuCategory, MenuItem } from "@/lib/queries/pos";
 import { useTenant } from "../tenant-context";
 import {
+  deleteMenuCategory,
   setMenuCategoryActive,
   setMenuItemActive,
   upsertMenuCategory,
@@ -123,6 +124,22 @@ export function MenuManager({ categories, items, priceMode }: Props) {
               >
                 {category.active ? "Hide category" : "Show category"}
               </button>
+              {categoryItems.length === 0 && (
+                <button
+                  onClick={() => {
+                    if (!confirm(`Delete the category "${category.name}"?`)) return;
+                    startTransition(async () => {
+                      const result = await deleteMenuCategory(slug, category.id);
+                      if (!result.ok) setError(result.error);
+                      else router.refresh();
+                    });
+                  }}
+                  disabled={pending}
+                  className="text-xs text-red-600 underline disabled:opacity-40"
+                >
+                  Delete category
+                </button>
+              )}
             </div>
 
             {categoryItems.length === 0 ? (

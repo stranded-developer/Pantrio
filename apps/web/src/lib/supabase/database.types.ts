@@ -1009,6 +1009,9 @@ isOneToOne: false
 "dearmor":
 { Args: { "": string }; Returns: string
                            },
+"delete_time_entry":
+{ Args: { "p_entry": string,"p_note": string }; Returns: undefined
+                           },
 "device_claim_print_jobs":
 { Args: { "p_limit"?: number,"p_token": string }; Returns: {
               "attempts": number,"id": string,"kind": Database["public"]['Enums']["print_kind"],"order_id": string

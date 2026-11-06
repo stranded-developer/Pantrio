@@ -67,3 +67,18 @@ export async function setMenuCategoryActive(slug: string, id: string, active: bo
   const { error } = await supabase.from("menu_categories").update({ active }).eq("id", id).eq("org_id", org.id);
   return error ? { ok: false, error: error.message } : done(slug);
 }
+
+/**
+ * Delete a category. Only an empty one: items are never deleted (D12), so a
+ * category that still holds items — hidden ones too — is refused by the
+ * foreign key. Move its items to another category first, or hide it.
+ */
+export async function deleteMenuCategory(slug: string, id: string): Promise<ActionResult> {
+  const { org } = await requireMembership(slug, "menu.manage");
+  const supabase = await createClient();
+  const { error } = await supabase.from("menu_categories").delete().eq("id", id).eq("org_id", org.id);
+  if (error?.code === "23503") {
+    return { ok: false, error: "This category still has items (hidden ones count too). Move them to another category first, or hide it." };
+  }
+  return error ? { ok: false, error: error.message } : done(slug);
+}

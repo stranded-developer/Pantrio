@@ -249,3 +249,16 @@ User: discount days with checkboxes per menu item (or all). Decided:
   money actually charged; ingredient cost is unchanged.
 - Managed by roles with Menu permission (menu.manage).
 - pos.ts mirrors create_order (lineDiscount / bestDiscount).
+
+### P28 — Empty categories can be deleted; timesheet entries can be deleted (2026-11-06)
+User: a category can't be deleted once added; timesheets should be
+deletable by the roles that manage them. Decided:
+- **Categories:** Delete appears on an **empty** category only. Items are
+  never deleted (D12) and the FK is `on delete restrict`, so a category
+  still holding items — hidden ones too — must have them moved first (or
+  be hidden). No migration: RLS already let menu managers delete.
+- **Time entries:** `delete_time_entry(entry, reason)` — timesheets.manage,
+  a reason, never your own hours unless owner (same as edit, P25). The
+  whole row + reason go into audit_log; clock photos stay in storage.
+  **Rejected:** a soft-delete flag (the audit row already keeps it, and
+  every timesheet query would need a filter).
