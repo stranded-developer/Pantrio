@@ -61,13 +61,20 @@ function layout(data, { width, reprint, logo }) {
   }
   if (subtitle.length) blocks.push({ align: "center", lines: fit(subtitle, width) });
 
-  if (order.queue_no != null) {
+  if (order.table_name) {
+    // Table service (P29): the table, not a customer number.
+    blocks.push({ align: "center", lines: ["", "MEJA / TABLE"] });
+    blocks.push({ align: "center", bold: true, size: 3, lines: [String(order.table_name)] });
+  } else if (order.queue_no != null) {
     blocks.push({ align: "center", lines: ["", "NOMOR ANDA"] });
     blocks.push({ align: "center", bold: true, size: 3, lines: [String(order.queue_no)] });
   }
 
   const notices = [];
-  if (reprint) notices.push("** SALINAN / REPRINT **");
+  // An open bill printed for the guests to check — not a receipt.
+  const bill = order.status === "open";
+  if (bill) notices.push("TAGIHAN / BILL", "BELUM DIBAYAR / NOT PAID");
+  if (reprint && !bill) notices.push("** SALINAN / REPRINT **");
   if (order.status === "voided") notices.push("*** DIBATALKAN / VOID ***");
   if (notices.length) blocks.push({ align: "center", bold: true, lines: notices });
 
@@ -75,7 +82,7 @@ function layout(data, { width, reprint, logo }) {
     lines: [
       "",
       formatDateTime(order.opened_at, settings.timezone),
-      `Order #${order.order_no}`,
+      `Order #${order.order_no}${order.guests ? ` · ${order.guests} tamu` : ""}`,
       ...(order.cashier ? [`Kasir: ${order.cashier}`] : []),
       rule,
     ],

@@ -124,3 +124,25 @@ test("a discounted line shows the menu price, then the discount (P27)", () => {
   assert.match(text, /Coffee Tuesday\s+-11\.000/);
   assert.match(text, /Subtotal\s+50\.000/);
 });
+
+test("table service: the table instead of a number; an open bill prints as BILL, not paid (P29)", () => {
+  const open = {
+    ...sample,
+    order: { ...sample.order, queue_no: null, status: "open", table_name: "12", guests: 4 },
+    payment: null,
+  };
+  const bill = renderText(open, { width: 32 });
+  assert.match(bill, /MEJA \/ TABLE/);
+  assert.match(bill, /^\s*12$/m);
+  assert.match(bill, /TAGIHAN \/ BILL/);
+  assert.match(bill, /BELUM DIBAYAR/);
+  assert.match(bill, /4 tamu/);
+  assert.doesNotMatch(bill, /NOMOR ANDA|Tunai|Kembali|REPRINT/);
+  // Printing the bill again is still a bill, not a "reprint" receipt.
+  assert.doesNotMatch(renderText(open, { width: 32, reprint: true }), /REPRINT/);
+
+  const paid = renderText({ ...open, order: { ...open.order, status: "paid" }, payment: sample.payment }, { width: 32 });
+  assert.match(paid, /MEJA \/ TABLE/);
+  assert.doesNotMatch(paid, /TAGIHAN|BELUM DIBAYAR/);
+  assert.match(paid, /Kembali/);
+});

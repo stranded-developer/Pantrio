@@ -59,6 +59,11 @@ export function KitchenBoard({
         { event: "*", schema: "public", table: "orders", filter: `outlet_id=eq.${outletId}` },
         () => router.refresh()
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "order_rounds", filter: `outlet_id=eq.${outletId}` },
+        () => router.refresh()
+      )
       .subscribe();
 
     const safety = setInterval(() => router.refresh(), SAFETY_REFRESH_MS);
@@ -99,7 +104,7 @@ export function KitchenBoard({
     setError(null);
     setBusyId(order.id);
 
-    const result = await setKitchenDone(slug, order.id, markDone);
+    const result = await setKitchenDone(slug, order.id, markDone, order.kind);
 
     setBusyId(null);
 
@@ -219,7 +224,10 @@ function Ticket({
   return (
     <article className={`flex flex-col rounded-2xl border-2 ${frame}`}>
       <div className="flex items-start justify-between gap-3 p-4 pb-2">
-        <p className="text-5xl font-bold tabular-nums leading-none">{order.queue_no}</p>
+        <div>
+          <p className="text-5xl font-bold tabular-nums leading-none">{order.label}</p>
+          {order.round_no !== null && <p className="mt-1 text-sm text-neutral-400">Table · round {order.round_no}</p>}
+        </div>
         <div className="text-right">
           {order.priority && (
             <span className="inline-block rounded-lg bg-red-600 px-3 py-1 text-sm font-bold uppercase tracking-wide">

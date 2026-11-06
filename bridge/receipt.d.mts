@@ -13,6 +13,9 @@ export type ReceiptData = {
     tax_total: number;
     grand_total: number;
     cashier?: string | null;
+    /** Table service (P29). An "open" order prints as a bill, not paid. */
+    table_name?: string | null;
+    guests?: number | null;
   };
   items: {
     name_snapshot: string;

@@ -262,3 +262,26 @@ deletable by the roles that manage them. Decided:
   whole row + reason go into audit_log; clock photos stay in storage.
   **Rejected:** a soft-delete flag (the audit row already keeps it, and
   every timesheet query would need a filter).
+
+### P29 — Table service: one switch per branch, open bills on tables, pay at the end (2026-11-06)
+User: some restaurants (Kawa) seat guests, take more orders during the
+meal, and are paid at the end; each draws its own floor plan with its own
+table numbers. Suggested "self serve mode" and "table serve mode". Decided
+(details: docs/table-service.md):
+- **One engine, one switch per branch** (Settings → Tables). Off = FOKAS
+  today. On = a floor plan and open bills; **pay-now stays** for takeaway.
+  **Rejected:** two separate modes / code paths — they would drift.
+- A bill is an `orders` row with status `open` on a table (one open bill
+  per table). Each **round** sent is its own kitchen ticket. Lines snapshot
+  price and discount when sent; service/PB1 on the whole bill, rounded once
+  (`bill_totals` = create_order's formula, so a bill = the same pay-now
+  order). The bill counts on the business day it is **paid**.
+- Taking a sent line off: **orders.void + reason, audited** (usual theft
+  route at table restaurants). Cancelling the bill: void_order, same rule.
+- Waiters: own phones/iPads or one shared device with PIN sign-in; every
+  device is a registered terminal (P25). Idempotent rounds (D10); the table
+  row is locked while a round is added, so two waiters can't open two bills.
+- Pre-bill printed as an ordinary receipt job for an open order; the
+  bridge prints it as TAGIHAN / BILL, not paid. Older bridges print it as
+  a receipt with no payment lines — update bridge/receipt.mjs.
+- **Rejected for now:** split bill (user: not needed), merge tables.

@@ -25,6 +25,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"dining_tables": {
+                  Row: {
+                    "active": boolean,"area_id": string,"created_at": string,"h": number,"id": string,"name": string,"org_id": string,"outlet_id": string,"seats": number,"shape": Database["public"]['Enums']["table_shape"],"w": number,"x": number,"y": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active"?: boolean,"area_id": string,"created_at"?: string,"h"?: number,"id"?: string,"name": string,"org_id": string,"outlet_id": string,"seats"?: number,"shape"?: Database["public"]['Enums']["table_shape"],"w"?: number,"x"?: number,"y"?: number
+                  }
+                  Update: {
+                    "active"?: boolean,"area_id"?: string,"created_at"?: string,"h"?: number,"id"?: string,"name"?: string,"org_id"?: string,"outlet_id"?: string,"seats"?: number,"shape"?: Database["public"]['Enums']["table_shape"],"w"?: number,"x"?: number,"y"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "dining_tables_area_id_org_id_fkey"
+      columns: ["area_id","org_id"]
+isOneToOne: false
+      referencedRelation: "floor_areas"
+      referencedColumns: ["id","org_id"]
+    },{
+      foreignKeyName: "dining_tables_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "dining_tables_outlet_id_org_id_fkey"
+      columns: ["outlet_id","org_id"]
+isOneToOne: false
+      referencedRelation: "outlets"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
                 },"discount_items": {
                   Row: {
                     "discount_id": string,"menu_item_id": string,"org_id": string
@@ -155,6 +187,32 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "organizations"
       referencedColumns: ["id"]
+    }
+                  ]
+                },"floor_areas": {
+                  Row: {
+                    "active": boolean,"created_at": string,"id": string,"name": string,"org_id": string,"outlet_id": string,"sort": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active"?: boolean,"created_at"?: string,"id"?: string,"name": string,"org_id": string,"outlet_id": string,"sort"?: number
+                  }
+                  Update: {
+                    "active"?: boolean,"created_at"?: string,"id"?: string,"name"?: string,"org_id"?: string,"outlet_id"?: string,"sort"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "floor_areas_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "floor_areas_outlet_id_org_id_fkey"
+      columns: ["outlet_id","org_id"]
+isOneToOne: false
+      referencedRelation: "outlets"
+      referencedColumns: ["id","org_id"]
     }
                   ]
                 },"ingredient_conversions": {
@@ -297,14 +355,14 @@ isOneToOne: false
                   ]
                 },"order_items": {
                   Row: {
-                    "discount_id": string | null,"discount_name": string | null,"id": string,"line_discount": number,"line_subtotal": number,"menu_item_id": string | null,"modifiers_json": NonNullable<Json>,"name_snapshot": string,"order_id": string,"org_id": string,"qty": number,"unit_cost": number | null,"unit_price": number,"void_reason": string | null,"voided": boolean
+                    "added_by": string | null,"discount_id": string | null,"discount_name": string | null,"id": string,"line_discount": number,"line_subtotal": number,"menu_item_id": string | null,"modifiers_json": NonNullable<Json>,"name_snapshot": string,"order_id": string,"org_id": string,"qty": number,"round_id": string | null,"unit_cost": number | null,"unit_price": number,"void_reason": string | null,"voided": boolean,"voided_at": string | null,"voided_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "discount_id"?: string | null,"discount_name"?: string | null,"id"?: string,"line_discount"?: number,"line_subtotal": number,"menu_item_id"?: string | null,"modifiers_json"?: NonNullable<Json>,"name_snapshot": string,"order_id": string,"org_id": string,"qty": number,"unit_cost"?: number | null,"unit_price": number,"void_reason"?: string | null,"voided"?: boolean
+                    "added_by"?: string | null,"discount_id"?: string | null,"discount_name"?: string | null,"id"?: string,"line_discount"?: number,"line_subtotal": number,"menu_item_id"?: string | null,"modifiers_json"?: NonNullable<Json>,"name_snapshot": string,"order_id": string,"org_id": string,"qty": number,"round_id"?: string | null,"unit_cost"?: number | null,"unit_price": number,"void_reason"?: string | null,"voided"?: boolean,"voided_at"?: string | null,"voided_by"?: string | null
                   }
                   Update: {
-                    "discount_id"?: string | null,"discount_name"?: string | null,"id"?: string,"line_discount"?: number,"line_subtotal"?: number,"menu_item_id"?: string | null,"modifiers_json"?: NonNullable<Json>,"name_snapshot"?: string,"order_id"?: string,"org_id"?: string,"qty"?: number,"unit_cost"?: number | null,"unit_price"?: number,"void_reason"?: string | null,"voided"?: boolean
+                    "added_by"?: string | null,"discount_id"?: string | null,"discount_name"?: string | null,"id"?: string,"line_discount"?: number,"line_subtotal"?: number,"menu_item_id"?: string | null,"modifiers_json"?: NonNullable<Json>,"name_snapshot"?: string,"order_id"?: string,"org_id"?: string,"qty"?: number,"round_id"?: string | null,"unit_cost"?: number | null,"unit_price"?: number,"void_reason"?: string | null,"voided"?: boolean,"voided_at"?: string | null,"voided_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -319,18 +377,44 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "orders"
       referencedColumns: ["id","org_id"]
+    },{
+      foreignKeyName: "order_items_round_fk"
+      columns: ["round_id","org_id"]
+isOneToOne: false
+      referencedRelation: "order_rounds"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
+                },"order_rounds": {
+                  Row: {
+                    "client_request_id": string,"created_at": string,"created_by": string,"id": string,"kitchen_done_at": string | null,"kitchen_done_by": string | null,"order_id": string,"org_id": string,"outlet_id": string,"round_no": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "client_request_id": string,"created_at"?: string,"created_by": string,"id"?: string,"kitchen_done_at"?: string | null,"kitchen_done_by"?: string | null,"order_id": string,"org_id": string,"outlet_id": string,"round_no": number
+                  }
+                  Update: {
+                    "client_request_id"?: string,"created_at"?: string,"created_by"?: string,"id"?: string,"kitchen_done_at"?: string | null,"kitchen_done_by"?: string | null,"order_id"?: string,"org_id"?: string,"outlet_id"?: string,"round_no"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "order_rounds_order_id_org_id_fkey"
+      columns: ["order_id","org_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id","org_id"]
     }
                   ]
                 },"orders": {
                   Row: {
-                    "business_date": string,"client_request_id": string,"closed_at": string | null,"cost_total": number | null,"discount_total": number,"grand_total": number,"id": string,"kitchen_done_at": string | null,"kitchen_done_by": string | null,"opened_at": string,"opened_by": string,"order_no": number,"org_id": string,"outlet_id": string,"pb1_on_service": boolean,"price_mode": Database["public"]['Enums']["price_mode"],"priority": boolean,"queue_no": number | null,"service_bps": number,"service_total": number,"status": Database["public"]['Enums']["order_status"],"subtotal": number,"tax_bps": number,"tax_total": number,"void_reason": string | null,"voided_at": string | null,"voided_by": string | null
+                    "bill_printed_at": string | null,"business_date": string,"client_request_id": string,"closed_at": string | null,"cost_total": number | null,"discount_total": number,"grand_total": number,"guests": number | null,"id": string,"kitchen_done_at": string | null,"kitchen_done_by": string | null,"opened_at": string,"opened_by": string,"order_no": number,"org_id": string,"outlet_id": string,"pb1_on_service": boolean,"price_mode": Database["public"]['Enums']["price_mode"],"priority": boolean,"queue_no": number | null,"service_bps": number,"service_total": number,"status": Database["public"]['Enums']["order_status"],"subtotal": number,"table_id": string | null,"tax_bps": number,"tax_total": number,"void_reason": string | null,"voided_at": string | null,"voided_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "business_date": string,"client_request_id": string,"closed_at"?: string | null,"cost_total"?: number | null,"discount_total"?: number,"grand_total"?: number,"id"?: string,"kitchen_done_at"?: string | null,"kitchen_done_by"?: string | null,"opened_at"?: string,"opened_by": string,"order_no": number,"org_id": string,"outlet_id": string,"pb1_on_service": boolean,"price_mode": Database["public"]['Enums']["price_mode"],"priority"?: boolean,"queue_no"?: number | null,"service_bps": number,"service_total"?: number,"status"?: Database["public"]['Enums']["order_status"],"subtotal"?: number,"tax_bps": number,"tax_total"?: number,"void_reason"?: string | null,"voided_at"?: string | null,"voided_by"?: string | null
+                    "bill_printed_at"?: string | null,"business_date": string,"client_request_id": string,"closed_at"?: string | null,"cost_total"?: number | null,"discount_total"?: number,"grand_total"?: number,"guests"?: number | null,"id"?: string,"kitchen_done_at"?: string | null,"kitchen_done_by"?: string | null,"opened_at"?: string,"opened_by": string,"order_no": number,"org_id": string,"outlet_id": string,"pb1_on_service": boolean,"price_mode": Database["public"]['Enums']["price_mode"],"priority"?: boolean,"queue_no"?: number | null,"service_bps": number,"service_total"?: number,"status"?: Database["public"]['Enums']["order_status"],"subtotal"?: number,"table_id"?: string | null,"tax_bps": number,"tax_total"?: number,"void_reason"?: string | null,"voided_at"?: string | null,"voided_by"?: string | null
                   }
                   Update: {
-                    "business_date"?: string,"client_request_id"?: string,"closed_at"?: string | null,"cost_total"?: number | null,"discount_total"?: number,"grand_total"?: number,"id"?: string,"kitchen_done_at"?: string | null,"kitchen_done_by"?: string | null,"opened_at"?: string,"opened_by"?: string,"order_no"?: number,"org_id"?: string,"outlet_id"?: string,"pb1_on_service"?: boolean,"price_mode"?: Database["public"]['Enums']["price_mode"],"priority"?: boolean,"queue_no"?: number | null,"service_bps"?: number,"service_total"?: number,"status"?: Database["public"]['Enums']["order_status"],"subtotal"?: number,"tax_bps"?: number,"tax_total"?: number,"void_reason"?: string | null,"voided_at"?: string | null,"voided_by"?: string | null
+                    "bill_printed_at"?: string | null,"business_date"?: string,"client_request_id"?: string,"closed_at"?: string | null,"cost_total"?: number | null,"discount_total"?: number,"grand_total"?: number,"guests"?: number | null,"id"?: string,"kitchen_done_at"?: string | null,"kitchen_done_by"?: string | null,"opened_at"?: string,"opened_by"?: string,"order_no"?: number,"org_id"?: string,"outlet_id"?: string,"pb1_on_service"?: boolean,"price_mode"?: Database["public"]['Enums']["price_mode"],"priority"?: boolean,"queue_no"?: number | null,"service_bps"?: number,"service_total"?: number,"status"?: Database["public"]['Enums']["order_status"],"subtotal"?: number,"table_id"?: string | null,"tax_bps"?: number,"tax_total"?: number,"void_reason"?: string | null,"voided_at"?: string | null,"voided_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -344,6 +428,12 @@ isOneToOne: false
       columns: ["outlet_id","org_id"]
 isOneToOne: false
       referencedRelation: "outlets"
+      referencedColumns: ["id","org_id"]
+    },{
+      foreignKeyName: "orders_table_fk"
+      columns: ["table_id","org_id"]
+isOneToOne: false
+      referencedRelation: "dining_tables"
       referencedColumns: ["id","org_id"]
     }
                   ]
@@ -449,14 +539,14 @@ isOneToOne: true
                   ]
                 },"outlets": {
                   Row: {
-                    "active": boolean,"created_at": string,"id": string,"name": string,"org_id": string
+                    "active": boolean,"created_at": string,"id": string,"name": string,"org_id": string,"table_service": boolean
                   }
                   ComputedFields: never
                   Insert: {
-                    "active"?: boolean,"created_at"?: string,"id"?: string,"name": string,"org_id": string
+                    "active"?: boolean,"created_at"?: string,"id"?: string,"name": string,"org_id": string,"table_service"?: boolean
                   }
                   Update: {
-                    "active"?: boolean,"created_at"?: string,"id"?: string,"name"?: string,"org_id"?: string
+                    "active"?: boolean,"created_at"?: string,"id"?: string,"name"?: string,"org_id"?: string,"table_service"?: boolean
                   }
                   Relationships: [
                     {
@@ -882,6 +972,9 @@ isOneToOne: false
               "amount": number,"id": string,"name": string
             }[]
                            },
+"bill_totals":
+{ Args: { "p_disc": number,"p_lines": number,"p_mode": Database["public"]['Enums']["price_mode"],"p_pb1_bps": number,"p_pb1_on_service": boolean,"p_service_bps": number }; Returns: Record<string, unknown>
+                           },
 "business_date":
 { Args: { "cutover_hour": number,"ts": string,"tz": string }; Returns: string
                            },
@@ -966,12 +1059,14 @@ isOneToOne: false
                            },
 "create_order":
 { Args: { "p_amount_tendered": number,"p_client_request_id": string,"p_items": Json,"p_org": string,"p_outlet": string,"p_priority"?: boolean }; Returns: {
-              "business_date": string,
+              "bill_printed_at": string | null,
+"business_date": string,
 "client_request_id": string,
 "closed_at": string | null,
 "cost_total": number | null,
 "discount_total": number,
 "grand_total": number,
+"guests": number | null,
 "id": string,
 "kitchen_done_at": string | null,
 "kitchen_done_by": string | null,
@@ -988,6 +1083,7 @@ isOneToOne: false
 "service_total": number,
 "status": Database["public"]['Enums']["order_status"],
 "subtotal": number,
+"table_id": string | null,
 "tax_bps": number,
 "tax_total": number,
 "void_reason": string | null,
@@ -1089,6 +1185,45 @@ isOneToOne: false
 "link_menu_recipe":
 { Args: { "p_menu_item": string,"p_recipe": string }; Returns: undefined
                            },
+"move_bill":
+{ Args: { "p_order": string,"p_table": string }; Returns: {
+              "bill_printed_at": string | null,
+"business_date": string,
+"client_request_id": string,
+"closed_at": string | null,
+"cost_total": number | null,
+"discount_total": number,
+"grand_total": number,
+"guests": number | null,
+"id": string,
+"kitchen_done_at": string | null,
+"kitchen_done_by": string | null,
+"opened_at": string,
+"opened_by": string,
+"order_no": number,
+"org_id": string,
+"outlet_id": string,
+"pb1_on_service": boolean,
+"price_mode": Database["public"]['Enums']["price_mode"],
+"priority": boolean,
+"queue_no": number | null,
+"service_bps": number,
+"service_total": number,
+"status": Database["public"]['Enums']["order_status"],
+"subtotal": number,
+"table_id": string | null,
+"tax_bps": number,
+"tax_total": number,
+"void_reason": string | null,
+"voided_at": string | null,
+"voided_by": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "orders"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "my_clock_status":
 { Args: { "p_org": string }; Returns: Json
                            },
@@ -1116,9 +1251,51 @@ isOneToOne: false
 "pin_hash":
 { Args: { "p_org": string,"p_pin": string }; Returns: string
                            },
+"print_bill":
+{ Args: { "p_order": string }; Returns: undefined
+                           },
 "queue_reprint":
 { Args: { "p_order": string }; Returns: undefined
                            },
+"recalc_bill":
+{ Args: { "p_order": string }; Returns: {
+              "bill_printed_at": string | null,
+"business_date": string,
+"client_request_id": string,
+"closed_at": string | null,
+"cost_total": number | null,
+"discount_total": number,
+"grand_total": number,
+"guests": number | null,
+"id": string,
+"kitchen_done_at": string | null,
+"kitchen_done_by": string | null,
+"opened_at": string,
+"opened_by": string,
+"order_no": number,
+"org_id": string,
+"outlet_id": string,
+"pb1_on_service": boolean,
+"price_mode": Database["public"]['Enums']["price_mode"],
+"priority": boolean,
+"queue_no": number | null,
+"service_bps": number,
+"service_total": number,
+"status": Database["public"]['Enums']["order_status"],
+"subtotal": number,
+"table_id": string | null,
+"tax_bps": number,
+"tax_total": number,
+"void_reason": string | null,
+"voided_at": string | null,
+"voided_by": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "orders"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "refresh_time_entries":
 { Args: { "p_org": string }; Returns: undefined
                            },
@@ -1137,8 +1314,14 @@ isOneToOne: false
 "save_discount":
 { Args: { "p_active": boolean,"p_all_items": boolean,"p_ends": string,"p_id": string,"p_items": (string)[],"p_kind": Database["public"]['Enums']["discount_kind"],"p_name": string,"p_org": string,"p_starts": string,"p_value": number,"p_weekdays": (number)[] }; Returns: string
                            },
+"save_floor_plan":
+{ Args: { "p_area": string,"p_tables": Json }; Returns: undefined
+                           },
 "save_recipe":
 { Args: { "p_lines": Json,"p_name": string,"p_recipe": string,"p_yield_qty": number,"p_yield_unit": Database["public"]['Enums']["unit_code"] }; Returns: undefined
+                           },
+"send_round":
+{ Args: { "p_client_request_id": string,"p_guests"?: number,"p_items": Json,"p_order": string,"p_org": string,"p_outlet": string,"p_table": string }; Returns: Json
                            },
 "set_kitchen_done":
 { Args: { "p_done": boolean,"p_order": string }; Returns: undefined
@@ -1149,9 +1332,54 @@ isOneToOne: false
 "set_menu_costs":
 { Args: { "p_costs": Json,"p_org": string }; Returns: undefined
                            },
+"set_round_done":
+{ Args: { "p_done": boolean,"p_round": string }; Returns: undefined
+                           },
+"set_table_service":
+{ Args: { "p_on": boolean,"p_outlet": string }; Returns: undefined
+                           },
 "set_terminal_options":
 { Args: { "p_idle_minutes": number,"p_lock_after_sale": boolean,"p_org": string }; Returns: undefined
                            },
+"settle_bill":
+{ Args: { "p_amount_tendered": number,"p_order": string }; Returns: {
+              "bill_printed_at": string | null,
+"business_date": string,
+"client_request_id": string,
+"closed_at": string | null,
+"cost_total": number | null,
+"discount_total": number,
+"grand_total": number,
+"guests": number | null,
+"id": string,
+"kitchen_done_at": string | null,
+"kitchen_done_by": string | null,
+"opened_at": string,
+"opened_by": string,
+"order_no": number,
+"org_id": string,
+"outlet_id": string,
+"pb1_on_service": boolean,
+"price_mode": Database["public"]['Enums']["price_mode"],
+"priority": boolean,
+"queue_no": number | null,
+"service_bps": number,
+"service_total": number,
+"status": Database["public"]['Enums']["order_status"],
+"subtotal": number,
+"table_id": string | null,
+"tax_bps": number,
+"tax_total": number,
+"void_reason": string | null,
+"voided_at": string | null,
+"voided_by": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "orders"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "shares_org_with":
 { Args: { "p_user": string }; Returns: boolean
                            },
@@ -1195,14 +1423,16 @@ isOneToOne: false
               "email": string
             }[]
                            },
-"void_order":
-{ Args: { "p_order": string,"p_reason": string }; Returns: {
-              "business_date": string,
+"void_bill_item":
+{ Args: { "p_item": string,"p_reason": string }; Returns: {
+              "bill_printed_at": string | null,
+"business_date": string,
 "client_request_id": string,
 "closed_at": string | null,
 "cost_total": number | null,
 "discount_total": number,
 "grand_total": number,
+"guests": number | null,
 "id": string,
 "kitchen_done_at": string | null,
 "kitchen_done_by": string | null,
@@ -1219,6 +1449,46 @@ isOneToOne: false
 "service_total": number,
 "status": Database["public"]['Enums']["order_status"],
 "subtotal": number,
+"table_id": string | null,
+"tax_bps": number,
+"tax_total": number,
+"void_reason": string | null,
+"voided_at": string | null,
+"voided_by": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "orders"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"void_order":
+{ Args: { "p_order": string,"p_reason": string }; Returns: {
+              "bill_printed_at": string | null,
+"business_date": string,
+"client_request_id": string,
+"closed_at": string | null,
+"cost_total": number | null,
+"discount_total": number,
+"grand_total": number,
+"guests": number | null,
+"id": string,
+"kitchen_done_at": string | null,
+"kitchen_done_by": string | null,
+"opened_at": string,
+"opened_by": string,
+"order_no": number,
+"org_id": string,
+"outlet_id": string,
+"pb1_on_service": boolean,
+"price_mode": Database["public"]['Enums']["price_mode"],
+"priority": boolean,
+"queue_no": number | null,
+"service_bps": number,
+"service_total": number,
+"status": Database["public"]['Enums']["order_status"],
+"subtotal": number,
+"table_id": string | null,
 "tax_bps": number,
 "tax_total": number,
 "void_reason": string | null,
@@ -1233,7 +1503,7 @@ isOneToOne: false
       } }
           }
           Enums: {
-            "cost_period": "monthly"|"yearly","discount_kind": "percent"|"amount","fixed_cost_category": "rent"|"electricity"|"water"|"gas"|"internet"|"other","income_tax_mode": "pph_final_umkm"|"custom"|"none","order_status": "open"|"awaiting_payment"|"paid"|"voided"|"refunded","org_role": "owner"|"manager"|"cashier","payment_method": "cash"|"qris"|"va"|"card","payment_provider": "cash"|"midtrans"|"edc","payment_status": "pending"|"paid"|"expired"|"failed"|"refunded","price_mode": "exclusive"|"inclusive","print_kind": "receipt"|"reprint"|"kitchen","print_status": "queued"|"claimed"|"printed"|"failed","recipe_kind": "menu_item"|"prep","time_entry_status": "open"|"closed"|"missing_out","unit_code": "mg"|"g"|"ons"|"kg"|"ml"|"l"|"pcs"|"lusin"
+            "cost_period": "monthly"|"yearly","discount_kind": "percent"|"amount","fixed_cost_category": "rent"|"electricity"|"water"|"gas"|"internet"|"other","income_tax_mode": "pph_final_umkm"|"custom"|"none","order_status": "open"|"awaiting_payment"|"paid"|"voided"|"refunded","org_role": "owner"|"manager"|"cashier","payment_method": "cash"|"qris"|"va"|"card","payment_provider": "cash"|"midtrans"|"edc","payment_status": "pending"|"paid"|"expired"|"failed"|"refunded","price_mode": "exclusive"|"inclusive","print_kind": "receipt"|"reprint"|"kitchen","print_status": "queued"|"claimed"|"printed"|"failed","recipe_kind": "menu_item"|"prep","table_shape": "square"|"round"|"long","time_entry_status": "open"|"closed"|"missing_out","unit_code": "mg"|"g"|"ons"|"kg"|"ml"|"l"|"pcs"|"lusin"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1349,7 +1619,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "cost_period": ["monthly", "yearly"],"discount_kind": ["percent", "amount"],"fixed_cost_category": ["rent", "electricity", "water", "gas", "internet", "other"],"income_tax_mode": ["pph_final_umkm", "custom", "none"],"order_status": ["open", "awaiting_payment", "paid", "voided", "refunded"],"org_role": ["owner", "manager", "cashier"],"payment_method": ["cash", "qris", "va", "card"],"payment_provider": ["cash", "midtrans", "edc"],"payment_status": ["pending", "paid", "expired", "failed", "refunded"],"price_mode": ["exclusive", "inclusive"],"print_kind": ["receipt", "reprint", "kitchen"],"print_status": ["queued", "claimed", "printed", "failed"],"recipe_kind": ["menu_item", "prep"],"time_entry_status": ["open", "closed", "missing_out"],"unit_code": ["mg", "g", "ons", "kg", "ml", "l", "pcs", "lusin"]
+            "cost_period": ["monthly", "yearly"],"discount_kind": ["percent", "amount"],"fixed_cost_category": ["rent", "electricity", "water", "gas", "internet", "other"],"income_tax_mode": ["pph_final_umkm", "custom", "none"],"order_status": ["open", "awaiting_payment", "paid", "voided", "refunded"],"org_role": ["owner", "manager", "cashier"],"payment_method": ["cash", "qris", "va", "card"],"payment_provider": ["cash", "midtrans", "edc"],"payment_status": ["pending", "paid", "expired", "failed", "refunded"],"price_mode": ["exclusive", "inclusive"],"print_kind": ["receipt", "reprint", "kitchen"],"print_status": ["queued", "claimed", "printed", "failed"],"recipe_kind": ["menu_item", "prep"],"table_shape": ["square", "round", "long"],"time_entry_status": ["open", "closed", "missing_out"],"unit_code": ["mg", "g", "ons", "kg", "ml", "l", "pcs", "lusin"]
           }
         }
 } as const

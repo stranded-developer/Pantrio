@@ -44,7 +44,7 @@ async function Shell({ slug, children }: { slug: string; children: ReactNode }) 
     <TenantProvider
       tenant={{ slug, base, orgId: org.id, outletId: outlet.id, timezone: settings.timezone }}
     >
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 bg-white px-6 py-4">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 bg-white px-3 py-3 sm:px-6 sm:py-4">
         <div className="flex flex-wrap items-center gap-6">
           <Link href={base || "/"}>
             {settings.logoUrl ? (
@@ -57,7 +57,7 @@ async function Shell({ slug, children }: { slug: string; children: ReactNode }) 
               Cafe POS{activeOutlets.length > 1 ? ` · ${outlet.name}` : ""}
             </p>
           </Link>
-          <Nav permissions={m.permissions} isOwner={m.isOwner} />
+          <Nav permissions={m.permissions} isOwner={m.isOwner} tableService={outlet.table_service} />
         </div>
         <div className="flex items-center gap-4">
           {activeOutlets.length > 1 && <OutletSwitcher outlets={activeOutlets} />}
@@ -89,7 +89,7 @@ async function Shell({ slug, children }: { slug: string; children: ReactNode }) 
           )}
         </div>
       </header>
-      <main className="flex-1 p-6">{children}</main>
+      <main className="flex-1 p-3 sm:p-6">{children}</main>
       <ReadyAlerts />
       {terminal && (
         <TerminalLock slug={slug} idleMinutes={terminal.idleMinutes} lockAfterSale={terminal.lockAfterSale} />

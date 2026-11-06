@@ -12,6 +12,7 @@ import {
   type PosTaxRules,
 } from "@pantrio/core";
 import type { MenuCategory, MenuItem } from "@/lib/queries/pos";
+import { newRequestId } from "@/lib/request-id";
 import { SALE_DONE_EVENT } from "@/lib/terminal-activity";
 import { useTenant } from "../tenant-context";
 import { reprintReceipt, submitCashOrder } from "./actions";
@@ -19,20 +20,6 @@ import { reprintReceipt, submitCashOrder } from "./actions";
 type CartLine = { menuItemId: string; name: string; unitPrice: number; qty: number; note?: string };
 /** A cart line as shown: current price plus today's discount (P27). */
 type PricedLine = CartLine & { discount: number; discountName: string | null };
-
-/**
- * Idempotency key for a checkout (FOKAS D10). crypto.randomUUID only exists
- * on HTTPS/localhost; getRandomValues works everywhere (e.g. a LAN test over
- * plain http), so build a v4 UUID from it when needed.
- */
-function newRequestId(): string {
-  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
-  const b = crypto.getRandomValues(new Uint8Array(16));
-  b[6] = (b[6]! & 0x0f) | 0x40;
-  b[8] = (b[8]! & 0x3f) | 0x80;
-  const h = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
-  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
-}
 
 /** Per restaurant and branch, so one browser can serve two tenants safely. */
 const cartKey = (outletId: string) => `pantrio.pos.cart.${outletId}`;

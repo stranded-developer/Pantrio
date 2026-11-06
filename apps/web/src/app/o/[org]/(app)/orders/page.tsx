@@ -40,7 +40,7 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/o
           <DateNav basePath={`${base}/orders`} date={date} prev={shiftDay(date, -1)} next={shiftDay(date, 1)} today={today} />
         </div>
         <div className="text-right">
-          <p className="text-sm text-neutral-500">{paid.length} orders · takings (excl. voided)</p>
+          <p className="text-sm text-neutral-500">{paid.length} orders · takings (excl. voided and open bills)</p>
           <p className="text-2xl font-semibold text-neutral-900">{formatRupiah(takings)}</p>
         </div>
       </div>
@@ -62,6 +62,9 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/o
                       {order.queue_no !== null && (
                         <span className="mr-2 rounded-md bg-neutral-900 px-2 py-0.5 text-sm text-white">No. {order.queue_no}</span>
                       )}
+                      {order.dining_tables && (
+                        <span className="mr-2 rounded-md bg-neutral-200 px-2 py-0.5 text-sm text-neutral-800">Table {order.dining_tables.name}</span>
+                      )}
                       #{order.order_no}
                     </p>
                     <p className="truncate text-sm text-neutral-500">
@@ -77,6 +80,9 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/o
                   <div className="flex shrink-0 items-center gap-3">
                     {voided && (
                       <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700">VOIDED</span>
+                    )}
+                    {order.status === "open" && (
+                      <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">OPEN BILL</span>
                     )}
                     <span className={`font-medium tabular-nums ${voided ? "text-neutral-400 line-through" : "text-neutral-900"}`}>
                       {formatRupiah(order.grand_total)}

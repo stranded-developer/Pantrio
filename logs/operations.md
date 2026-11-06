@@ -40,6 +40,7 @@
    docker exec -i pantrio-pgtest psql -q -t -U postgres < supabase/tests/pos_checks.sql | grep -E "ok|FAIL|expect"
    docker exec -i pantrio-pgtest psql -q -t -U postgres < supabase/tests/timeclock_checks.sql | grep -E "ok|FAIL|expect"
    docker exec -i pantrio-pgtest psql -q -t -U postgres < supabase/tests/discount_checks.sql | grep -E "ok|FAIL|expect"
+   docker exec -i pantrio-pgtest psql -q -t -U postgres < supabase/tests/table_checks.sql | grep -E "ok|FAIL|expect"
    docker rm -f pantrio-pgtest
    ```
    Every line must be `ok …` or an `(expect N): N` that matches; no `FAIL`.

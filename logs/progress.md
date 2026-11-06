@@ -4,6 +4,24 @@ Newest first. What shipped, and **how it was verified** (separate claims).
 
 ---
 
+## 2026-11-06 (c) — Table service (P29)
+
+- Migration 13 + Settings → Tables (switch, areas, drag-and-drop tables),
+  Tables (live floor plan: free / seated with total and minutes / bill
+  printed; phones get big buttons), table bill screen (rounds, new items
+  with notes, send to kitchen, remove sent line (orders.void), move table,
+  print bill, cash pay, cancel bill), kitchen tickets per round
+  (T<table> · round n), Orders show the table and OPEN BILL, receipts print
+  MEJA / TABLE and TAGIHAN / BILL for an open bill.
+- Verified: table_checks.sql all ok (78.540 = create_order on the same
+  lines; idempotent rounds; one bill per table under a "fresh" second
+  waiter; stale bill refused; void line needs manager + reason, audited;
+  move; pre-bill; receipt merges rounds; settle short/ok/double tap; open
+  bill cancel; switch off refused with open bills; used tables hidden;
+  takeaway unchanged; other restaurants refused). pos/timeclock/discount
+  checks unchanged, bridge 18 tests, typecheck, lint, build.
+  **Not verified:** in a browser or on paper; realtime on the live project.
+
 ## 2026-11-06 (b) — Delete empty categories; delete time entries (P28)
 
 - Menu: "Delete category" on empty categories (FK refuses one with items,

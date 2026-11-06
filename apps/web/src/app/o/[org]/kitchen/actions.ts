@@ -9,11 +9,15 @@ import { createClient } from "@/lib/supabase/server";
  * `done = false` is the undo for a mis-tap. Runs as the signed-in staff
  * member; set_kitchen_done() checks they belong to the order's restaurant.
  */
-export async function setKitchenDone(slug: string, orderId: string, done: boolean) {
+export async function setKitchenDone(slug: string, orderId: string, done: boolean, kind: "order" | "round" = "order") {
   const m = await requireMembership(slug);
   if (!can(m, "kitchen.view") && !can(m, "pos.sell")) return { ok: false as const, error: "Your role can't use the kitchen screen." };
   if (!z.uuid().safeParse(orderId).success) return { ok: false as const, error: "Invalid order." };
   const supabase = await createClient();
-  const { error } = await supabase.rpc("set_kitchen_done", { p_order: orderId, p_done: done });
+  // A table's round (P29) is its own ticket.
+  const { error } =
+    kind === "round"
+      ? await supabase.rpc("set_round_done", { p_round: orderId, p_done: done })
+      : await supabase.rpc("set_kitchen_done", { p_order: orderId, p_done: done });
   return error ? { ok: false as const, error: "Could not update the order. Please try again." } : { ok: true as const };
 }

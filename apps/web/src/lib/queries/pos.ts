@@ -43,6 +43,8 @@ export type OrderSummary = {
   opened_at: string;
   void_reason: string | null;
   opened_by: string;
+  /** Table service (P29): the table, when it was a table's bill. */
+  dining_tables: { name: string } | null;
 };
 
 /** One business day's orders for one outlet, newest first. */
@@ -50,14 +52,14 @@ export async function getOrdersForDate(orgId: string, outletId: string, business
   const supabase = await createClient();
   const { data } = await supabase
     .from("orders")
-    .select("id, order_no, queue_no, status, grand_total, opened_at, void_reason, opened_by")
+    .select("id, order_no, queue_no, status, grand_total, opened_at, void_reason, opened_by, dining_tables(name)")
     .eq("org_id", orgId)
     .eq("outlet_id", outletId)
     .eq("business_date", businessDate)
     .order("order_no", { ascending: false })
     // PostgREST caps at 1000 rows; ask explicitly so a busy day fails loudly.
     .limit(1000);
-  return (data ?? []) as OrderSummary[];
+  return (data ?? []) as unknown as OrderSummary[];
 }
 
 /** id → full name for the people on a list of orders (RLS: co-workers only). */
@@ -75,14 +77,14 @@ export async function getOrderDetail(orgId: string, orderId: string) {
     supabase
       .from("orders")
       .select(
-        "id, order_no, queue_no, status, subtotal, discount_total, service_total, tax_total, grand_total, cost_total, price_mode, opened_at, opened_by, business_date, void_reason, voided_at"
+        "id, order_no, queue_no, status, subtotal, discount_total, service_total, tax_total, grand_total, cost_total, price_mode, opened_at, opened_by, business_date, void_reason, voided_at, guests, dining_tables(name)"
       )
       .eq("org_id", orgId)
       .eq("id", orderId)
       .maybeSingle(),
     supabase
       .from("order_items")
-      .select("id, name_snapshot, qty, unit_price, line_subtotal, line_discount, discount_name, unit_cost, voided, modifiers_json")
+      .select("id, name_snapshot, qty, unit_price, line_subtotal, line_discount, discount_name, unit_cost, voided, void_reason, modifiers_json")
       .eq("org_id", orgId)
       .eq("order_id", orderId),
     supabase

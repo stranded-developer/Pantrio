@@ -7,7 +7,8 @@ import { useTenant } from "./tenant-context";
 
 // One tab per screen; shown only if the role may open it. Hiding a link is
 // convenience only — pages, actions and SQL check again (FOKAS D14, P24).
-const ITEMS: { path: string; label: string; perm: Permission | Permission[] | "owner" }[] = [
+const ITEMS: { path: string; label: string; perm: Permission | Permission[] | "owner"; tables?: true }[] = [
+  { path: "/tables", label: "Tables", perm: "pos.sell", tables: true },
   { path: "/pos", label: "POS", perm: "pos.sell" },
   { path: "/orders", label: "Orders", perm: "orders.view" },
   { path: "/kitchen", label: "Kitchen", perm: "kitchen.view" },
@@ -26,14 +27,23 @@ export function settingsPath(perms: readonly Permission[], isOwner: boolean): st
   return null;
 }
 
-export function Nav({ permissions, isOwner }: { permissions: Permission[]; isOwner: boolean }) {
+export function Nav({
+  permissions,
+  isOwner,
+  tableService,
+}: {
+  permissions: Permission[];
+  isOwner: boolean;
+  /** This branch serves tables (P29): show the floor plan tab. */
+  tableService: boolean;
+}) {
   const pathname = usePathname();
   const { base } = useTenant();
   const allowed = (perm: Permission | Permission[] | "owner") =>
     isOwner || (perm !== "owner" && (Array.isArray(perm) ? perm : [perm]).some((p) => permissions.includes(p)));
   const settings = settingsPath(permissions, isOwner);
   const items = [
-    ...ITEMS.filter((i) => allowed(i.perm)).map((i) => ({ href: `${base}${i.path}`, label: i.label, match: `${base}${i.path}` })),
+    ...ITEMS.filter((i) => allowed(i.perm) && (!i.tables || tableService)).map((i) => ({ href: `${base}${i.path}`, label: i.label, match: `${base}${i.path}` })),
     ...(settings ? [{ href: `${base}${settings}`, label: "Settings", match: `${base}/settings` }] : []),
   ];
 

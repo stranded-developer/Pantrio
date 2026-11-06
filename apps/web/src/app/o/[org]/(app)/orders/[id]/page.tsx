@@ -42,6 +42,12 @@ export default async function OrderDetailPage({ params }: PageProps<"/o/[org]/or
               {order.queue_no !== null && (
                 <span className="ml-2 font-normal text-neutral-500">· Customer no. {order.queue_no}</span>
               )}
+              {order.dining_tables && (
+                <span className="ml-2 font-normal text-neutral-500">
+                  · Table {order.dining_tables.name}
+                  {order.guests ? ` · ${order.guests} guests` : ""}
+                </span>
+              )}
             </h1>
             <p className="text-sm text-neutral-500">
               {new Date(order.opened_at).toLocaleString("en-GB", {
@@ -53,6 +59,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/o/[org]/or
             </p>
           </div>
           {voided && <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700">VOIDED</span>}
+          {order.status === "open" && (
+            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">OPEN BILL</span>
+          )}
         </div>
 
         {voided && order.void_reason && (
@@ -62,11 +71,12 @@ export default async function OrderDetailPage({ params }: PageProps<"/o/[org]/or
         <ul className="divide-y divide-neutral-100 border-y border-neutral-100">
           {items.map((item) => (
             <li key={item.id} className="flex justify-between py-3">
-              <div>
-                <span className="text-neutral-900">{item.name_snapshot}</span>
+              <div className={item.voided && !voided ? "text-neutral-400 line-through" : undefined}>
+                <span className={item.voided && !voided ? undefined : "text-neutral-900"}>{item.name_snapshot}</span>
                 <span className="ml-2 text-neutral-500">×{item.qty}</span>
                 <p className="text-xs text-neutral-400">{formatRupiah(item.unit_price)} each</p>
                 {noteOf(item.modifiers_json) && <p className="text-xs text-amber-700">↳ {noteOf(item.modifiers_json)}</p>}
+                {item.voided && !voided && item.void_reason && <p className="text-xs no-underline">removed: {item.void_reason}</p>}
                 {item.line_discount > 0 && (
                   <p className="text-xs text-green-700">
                     {item.discount_name ?? "Discount"} −{formatRupiah(item.line_discount)}

@@ -58,7 +58,7 @@ export const getOutlets = cache(async (orgId: string) => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("outlets")
-    .select("id, name, active")
+    .select("id, name, active, table_service")
     .eq("org_id", orgId)
     .order("created_at");
   return data ?? [];

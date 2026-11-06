@@ -1,4 +1,4 @@
-# Table service (proposal, P29 draft — not built)
+# Table service (P29 — built 2026-11-06, phase 1 + pre-bill print)
 
 User (2026-11-06): FOKAS is counter service (order and pay at the till).
 Kawa and other restaurants seat guests at tables: order first, add more
@@ -53,7 +53,28 @@ Split bill is the hardest part: payments, tax rounding per part, and
 receipts. It's worth shipping phase 1 without it and seeing whether
 Kawa asks for it.
 
-## Questions before building
+## Answers (user, 2026-11-06) and what was built
+
+1. Waiters walk around with their own phones/iPads, **or** one device is
+   shared and each waiter signs in with their PIN. Both work: every device
+   is a registered terminal (P25); the bill screen is phone-first
+   (Menu / Bill tabs) and "lock after sale" also locks after a round.
+2. No split bill. Not built.
+3. Both: pay-now (POS, takeaway) and pay-at-the-end (Tables) at one branch.
+4. A bill counts on the business day it is **paid**.
+
+Built: migration 13 (`outlets.table_service`, `floor_areas`,
+`dining_tables`, `order_rounds`, `send_round`, `void_bill_item`,
+`move_bill`, `print_bill`, `settle_bill`, `set_round_done`,
+`save_floor_plan`, `set_table_service`; `void_order` also cancels an open
+bill; receipt data has the table and merges rounds per item), Settings →
+Tables (switch + drag-and-drop editor per area), Tables (live floor plan),
+the table bill screen, kitchen tickets per round, Orders showing tables and
+open bills, bridge prints MEJA / TABLE and the TAGIHAN / BILL (not paid).
+Not built: split / merge / transfer items, ready alerts per round, QR
+self-order, covers report.
+
+## Questions before building (asked)
 
 1. Who takes the order at the table: waiters on their own phones/iPads
    (each must be a registered terminal with PIN sign-in, P25), or always
