@@ -407,14 +407,14 @@ isOneToOne: false
                   ]
                 },"orders": {
                   Row: {
-                    "bill_printed_at": string | null,"business_date": string,"client_request_id": string,"closed_at": string | null,"cost_total": number | null,"discount_total": number,"grand_total": number,"guests": number | null,"id": string,"kitchen_done_at": string | null,"kitchen_done_by": string | null,"opened_at": string,"opened_by": string,"order_no": number,"org_id": string,"outlet_id": string,"pb1_on_service": boolean,"price_mode": Database["public"]['Enums']["price_mode"],"priority": boolean,"queue_no": number | null,"service_bps": number,"service_total": number,"status": Database["public"]['Enums']["order_status"],"subtotal": number,"table_id": string | null,"tax_bps": number,"tax_total": number,"void_reason": string | null,"voided_at": string | null,"voided_by": string | null
+                    "bill_printed_at": string | null,"business_date": string,"client_request_id": string,"closed_at": string | null,"closed_by": string | null,"cost_total": number | null,"discount_total": number,"grand_total": number,"guests": number | null,"id": string,"kitchen_done_at": string | null,"kitchen_done_by": string | null,"opened_at": string,"opened_by": string,"order_no": number,"org_id": string,"outlet_id": string,"pb1_on_service": boolean,"price_mode": Database["public"]['Enums']["price_mode"],"priority": boolean,"queue_no": number | null,"service_bps": number,"service_total": number,"status": Database["public"]['Enums']["order_status"],"subtotal": number,"table_id": string | null,"tax_bps": number,"tax_total": number,"void_reason": string | null,"voided_at": string | null,"voided_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "bill_printed_at"?: string | null,"business_date": string,"client_request_id": string,"closed_at"?: string | null,"cost_total"?: number | null,"discount_total"?: number,"grand_total"?: number,"guests"?: number | null,"id"?: string,"kitchen_done_at"?: string | null,"kitchen_done_by"?: string | null,"opened_at"?: string,"opened_by": string,"order_no": number,"org_id": string,"outlet_id": string,"pb1_on_service": boolean,"price_mode": Database["public"]['Enums']["price_mode"],"priority"?: boolean,"queue_no"?: number | null,"service_bps": number,"service_total"?: number,"status"?: Database["public"]['Enums']["order_status"],"subtotal"?: number,"table_id"?: string | null,"tax_bps": number,"tax_total"?: number,"void_reason"?: string | null,"voided_at"?: string | null,"voided_by"?: string | null
+                    "bill_printed_at"?: string | null,"business_date": string,"client_request_id": string,"closed_at"?: string | null,"closed_by"?: string | null,"cost_total"?: number | null,"discount_total"?: number,"grand_total"?: number,"guests"?: number | null,"id"?: string,"kitchen_done_at"?: string | null,"kitchen_done_by"?: string | null,"opened_at"?: string,"opened_by": string,"order_no": number,"org_id": string,"outlet_id": string,"pb1_on_service": boolean,"price_mode": Database["public"]['Enums']["price_mode"],"priority"?: boolean,"queue_no"?: number | null,"service_bps": number,"service_total"?: number,"status"?: Database["public"]['Enums']["order_status"],"subtotal"?: number,"table_id"?: string | null,"tax_bps": number,"tax_total"?: number,"void_reason"?: string | null,"voided_at"?: string | null,"voided_by"?: string | null
                   }
                   Update: {
-                    "bill_printed_at"?: string | null,"business_date"?: string,"client_request_id"?: string,"closed_at"?: string | null,"cost_total"?: number | null,"discount_total"?: number,"grand_total"?: number,"guests"?: number | null,"id"?: string,"kitchen_done_at"?: string | null,"kitchen_done_by"?: string | null,"opened_at"?: string,"opened_by"?: string,"order_no"?: number,"org_id"?: string,"outlet_id"?: string,"pb1_on_service"?: boolean,"price_mode"?: Database["public"]['Enums']["price_mode"],"priority"?: boolean,"queue_no"?: number | null,"service_bps"?: number,"service_total"?: number,"status"?: Database["public"]['Enums']["order_status"],"subtotal"?: number,"table_id"?: string | null,"tax_bps"?: number,"tax_total"?: number,"void_reason"?: string | null,"voided_at"?: string | null,"voided_by"?: string | null
+                    "bill_printed_at"?: string | null,"business_date"?: string,"client_request_id"?: string,"closed_at"?: string | null,"closed_by"?: string | null,"cost_total"?: number | null,"discount_total"?: number,"grand_total"?: number,"guests"?: number | null,"id"?: string,"kitchen_done_at"?: string | null,"kitchen_done_by"?: string | null,"opened_at"?: string,"opened_by"?: string,"order_no"?: number,"org_id"?: string,"outlet_id"?: string,"pb1_on_service"?: boolean,"price_mode"?: Database["public"]['Enums']["price_mode"],"priority"?: boolean,"queue_no"?: number | null,"service_bps"?: number,"service_total"?: number,"status"?: Database["public"]['Enums']["order_status"],"subtotal"?: number,"table_id"?: string | null,"tax_bps"?: number,"tax_total"?: number,"void_reason"?: string | null,"voided_at"?: string | null,"voided_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -1063,6 +1063,7 @@ isOneToOne: false
 "business_date": string,
 "client_request_id": string,
 "closed_at": string | null,
+"closed_by": string | null,
 "cost_total": number | null,
 "discount_total": number,
 "grand_total": number,
@@ -1191,6 +1192,7 @@ isOneToOne: false
 "business_date": string,
 "client_request_id": string,
 "closed_at": string | null,
+"closed_by": string | null,
 "cost_total": number | null,
 "discount_total": number,
 "grand_total": number,
@@ -1263,6 +1265,7 @@ isOneToOne: false
 "business_date": string,
 "client_request_id": string,
 "closed_at": string | null,
+"closed_by": string | null,
 "cost_total": number | null,
 "discount_total": number,
 "grand_total": number,
@@ -1347,6 +1350,7 @@ isOneToOne: false
 "business_date": string,
 "client_request_id": string,
 "closed_at": string | null,
+"closed_by": string | null,
 "cost_total": number | null,
 "discount_total": number,
 "grand_total": number,
@@ -1429,6 +1433,7 @@ isOneToOne: false
 "business_date": string,
 "client_request_id": string,
 "closed_at": string | null,
+"closed_by": string | null,
 "cost_total": number | null,
 "discount_total": number,
 "grand_total": number,
@@ -1468,6 +1473,7 @@ isOneToOne: false
 "business_date": string,
 "client_request_id": string,
 "closed_at": string | null,
+"closed_by": string | null,
 "cost_total": number | null,
 "discount_total": number,
 "grand_total": number,

@@ -73,11 +73,11 @@ export async function getNames(userIds: string[]): Promise<Map<string, string>> 
 
 export async function getOrderDetail(orgId: string, orderId: string) {
   const supabase = await createClient();
-  const [order, items, payment, printJob] = await Promise.all([
+  const [order, items, payment, printJob, rounds] = await Promise.all([
     supabase
       .from("orders")
       .select(
-        "id, order_no, queue_no, status, subtotal, discount_total, service_total, tax_total, grand_total, cost_total, price_mode, opened_at, opened_by, business_date, void_reason, voided_at, guests, dining_tables(name)"
+        "id, order_no, queue_no, status, subtotal, discount_total, service_total, tax_total, grand_total, cost_total, price_mode, opened_at, opened_by, closed_at, closed_by, business_date, void_reason, voided_at, guests, dining_tables(name)"
       )
       .eq("org_id", orgId)
       .eq("id", orderId)
@@ -101,8 +101,21 @@ export async function getOrderDetail(orgId: string, orderId: string) {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    // Table service (P29): who sent each round.
+    supabase
+      .from("order_rounds")
+      .select("round_no, created_by, created_at")
+      .eq("org_id", orgId)
+      .eq("order_id", orderId)
+      .order("round_no"),
   ]);
-  return { order: order.data, items: items.data ?? [], payment: payment.data, lastPrint: printJob.data };
+  return {
+    order: order.data,
+    items: items.data ?? [],
+    payment: payment.data,
+    lastPrint: printJob.data,
+    rounds: rounds.data ?? [],
+  };
 }
 
 /** A line note is stored as [{ "note": "…" }] (FOKAS create_cafe_order). */

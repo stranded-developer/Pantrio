@@ -68,6 +68,9 @@ alter table orders
   add column table_id        uuid,
   add column guests          int check (guests between 1 and 200),
   add column bill_printed_at timestamptz,
+  -- Who took the money. A table bill is often opened by one waiter and paid
+  -- with another; opened_by stays the first, each round keeps its sender.
+  add column closed_by       uuid references auth.users(id),
   add constraint orders_table_fk foreign key (table_id, org_id)
     references dining_tables(id, org_id) on delete restrict;
 -- One open bill per table.
@@ -459,7 +462,7 @@ begin
     raise exception 'Amount tendered is less than the total due';
   end if;
   select * into v_set from org_settings where org_id = v_order.org_id;
-  update orders set status = 'paid', closed_at = now(),
+  update orders set status = 'paid', closed_at = now(), closed_by = auth.uid(),
                     business_date = business_date(now(), v_set.timezone, v_set.day_cutover_hour)
    where id = p_order returning * into v_order;
   insert into payments (org_id, order_id, provider, method, amount, status, paid_at, amount_tendered, change_given)
@@ -569,7 +572,8 @@ begin
 
   return jsonb_build_object(
     'order', to_jsonb(v_order) - 'client_request_id' - 'cost_total'
-             || jsonb_build_object('cashier', (select full_name from profiles where id = v_order.opened_by),
+             || jsonb_build_object('cashier', (select full_name from profiles
+                                                   where id = coalesce(v_order.closed_by, v_order.opened_by)),
                                    'table_name', (select name from dining_tables where id = v_order.table_id)),
     'items', v_items,
     'payment', (select jsonb_build_object('method', method, 'amount_tendered', amount_tendered,

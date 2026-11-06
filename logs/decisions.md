@@ -285,3 +285,10 @@ table numbers. Suggested "self serve mode" and "table serve mode". Decided
   bridge prints it as TAGIHAN / BILL, not paid. Older bridges print it as
   a receipt with no payment lines — update bridge/receipt.mjs.
 - **Rejected for now:** split bill (user: not needed), merge tables.
+- **Who did what (user: one iPad, many waiters).** No table "belongs" to a
+  waiter: anyone on shift can add a round or take payment (a waiter on a
+  break must not block a table). Instead every step records who did it —
+  `opened_by` (first round), `order_rounds.created_by` per round,
+  `order_items.added_by`/`voided_by`, and `orders.closed_by` = who took the
+  money. The order page lists them; the paid receipt's "Kasir" is the payer.
+  **Rejected:** locking a table to its first waiter.

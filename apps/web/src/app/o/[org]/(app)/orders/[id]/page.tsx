@@ -14,13 +14,16 @@ export default async function OrderDetailPage({ params }: PageProps<"/o/[org]/or
   const { org } = m;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
-  const [{ order, items, payment, lastPrint }, today, settings] = await Promise.all([
+  const [{ order, items, payment, lastPrint, rounds }, today, settings] = await Promise.all([
     getOrderDetail(org.id, id),
     businessDateToday(org.id),
     getOrgSettings(org.id),
   ]);
   if (!order) notFound();
-  const cashier = (await getNames([order.opened_by])).get(order.opened_by);
+  const names = await getNames([order.opened_by, ...(order.closed_by ? [order.closed_by] : []), ...rounds.map((r) => r.created_by)]);
+  const cashier = names.get(order.opened_by);
+  const time = (iso: string) =>
+    new Date(iso).toLocaleTimeString("en-GB", { timeZone: settings.timezone, hour: "2-digit", minute: "2-digit" });
 
   const voided = order.status === "voided";
   const mayVoid = can(m, "orders.void");
@@ -63,6 +66,22 @@ export default async function OrderDetailPage({ params }: PageProps<"/o/[org]/or
             <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">OPEN BILL</span>
           )}
         </div>
+
+        {order.dining_tables && (rounds.length > 0 || order.closed_by) && (
+          // A shared iPad: whoever signed in with their PIN is on each step.
+          <ul className="space-y-0.5 rounded-xl bg-neutral-50 p-3 text-xs text-neutral-600">
+            {rounds.map((r) => (
+              <li key={r.round_no}>
+                Round {r.round_no} sent {time(r.created_at)} by {names.get(r.created_by) ?? "—"}
+              </li>
+            ))}
+            {order.closed_by && order.closed_at && (
+              <li>
+                Paid {time(order.closed_at)}, taken by {names.get(order.closed_by) ?? "—"}
+              </li>
+            )}
+          </ul>
+        )}
 
         {voided && order.void_reason && (
           <p className="rounded-lg bg-red-50 p-3 text-sm text-red-800">Voided: {order.void_reason}</p>

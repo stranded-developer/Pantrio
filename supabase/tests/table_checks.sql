@@ -124,7 +124,8 @@ set role authenticated; select set_config('request.jwt.claim.sub', :W, false);
 select grand_total as due from orders where id = :'bill' \gset
 select settle_bill(:'bill', :due - 1);
 select case when status = 'paid' and business_date = org_business_date(:'org') and closed_at is not null
-            then 'ok bill paid' else 'FAIL settle' end from settle_bill(:'bill', :due + 5000);
+                 and closed_by = :W
+            then 'ok bill paid, payer recorded' else 'FAIL settle' end from settle_bill(:'bill', :due + 5000);
 select case when status = 'paid' then 'ok second tap returns the paid bill' else 'FAIL' end from settle_bill(:'bill', :due + 5000);
 select 'ok one payment with change' where (select count(*) from payments where order_id = :'bill') = 1
   and (select change_given from payments where order_id = :'bill') = 5000;
